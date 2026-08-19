@@ -1,6 +1,6 @@
 # ROADMAP001 — RustyOpus: Pure-Rust Opus Codec for Elixir
 
-- **Status:** In progress
+**Status:** Complete
 - **Scope:** Initial in-process wrapper around `opus-rs` and `0.1.0` release
 - **Primary interface:** Elixir
 - **Native implementation:** Rust via Rustler

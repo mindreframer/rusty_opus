@@ -1,0 +1,48 @@
+name: source QA
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: source-qa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qa:
+    name: Source QA
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: "27.3"
+          elixir-version: "1.20.1"
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.89.0"
+          components: rustfmt, clippy
+
+      - name: Cache Mix and Cargo builds
+        uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+            ~/.hex
+            ~/.cargo/registry
+            ~/.cargo/git
+            native/rusty_opus_native/target
+          key: ${{ runner.os }}-qa-rust1.89-${{ hashFiles('mix.lock', 'native/rusty_opus_native/Cargo.lock') }}-${{ hashFiles('mix.exs', 'lib/**/*.ex', 'test/**/*.exs', 'native/rusty_opus_native/src/**/*.rs') }}
+          restore-keys: |
+            ${{ runner.os }}-qa-rust1.89-${{ hashFiles('mix.lock', 'native/rusty_opus_native/Cargo.lock') }}-
+
+      - run: mix deps.get
+      - run: bin/qa_check.sh

@@ -55,10 +55,11 @@ RustyOpus targets the raw Opus CODEC. It does not parse, demux, or mux container
 
 Precompiled NIFs are published for:
 
-- Apple Silicon and Intel macOS
-- ARM64 and x86-64 Linux with glibc
+- Apple Silicon macOS (`aarch64-apple-darwin`)
+- ARM64 Linux with glibc (`aarch64-unknown-linux-gnu`)
+- x86-64 Linux with glibc (`x86_64-unknown-linux-gnu`)
 
-Other targets build from source with `RUSTY_OPUS_BUILD=1` and Rust 1.89.0.
+Other targets (e.g. Intel macOS) build from source with `RUSTY_OPUS_BUILD=1` and Rust 1.89.0.
 
 ## Technology
 

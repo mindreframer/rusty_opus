@@ -6,7 +6,7 @@ cd "$root"
 
 if git grep -nIE '(/Users/[^ ]+|/home/[^ ]+|\.\./rusty_opus|\.\./opus)' -- . \
   ':(exclude)@meta/**' ':(exclude)AGENTS.md' ':(exclude)scripts/audit_source.sh' \
-  ':(exclude)scripts/import_fixtures.sh' ':(exclude)bin/qa_check.sh' ':(exclude)*.md'; then
+  ':(exclude)scripts/import_fixtures.sh' ':(exclude)scripts/package_check.sh' ':(exclude)bin/qa_check.sh' ':(exclude)*.md'; then
   echo "machine-specific or sibling path found" >&2
   exit 1
 fi

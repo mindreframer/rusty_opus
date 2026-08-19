@@ -15,7 +15,6 @@ end
 Precompiled NIFs are published for:
 
 - Apple Silicon macOS (`aarch64-apple-darwin`)
-- Intel macOS (`x86_64-apple-darwin`)
 - ARM64 Linux with glibc (`aarch64-unknown-linux-gnu`)
 - x86-64 Linux with glibc (`x86_64-unknown-linux-gnu`)
 

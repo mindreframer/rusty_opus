@@ -15,7 +15,6 @@ defmodule RustyOpus.Native do
     version: version,
     targets: [
       "aarch64-apple-darwin",
-      "x86_64-apple-darwin",
       "aarch64-unknown-linux-gnu",
       "x86_64-unknown-linux-gnu"
     ],

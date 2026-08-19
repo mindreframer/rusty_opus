@@ -2,13 +2,13 @@
 
 ## Progress
 
-- [ ] Phase 7.1: Add `.github/workflows/ci.yml` running `bin/qa_check.sh` on push/PR; make it green from a clean run.
-- [ ] Phase 7.2: Add `.github/workflows/release.yml` building the pinned release NIF for the supported targets and attaching archives on tag `v*`.
-- [ ] Phase 7.3: Smoke the exact archived NIF through the public `RustyOpus` API and add a no-Rust `rustler_precompiled.download` consumer job.
-- [ ] Phase 7.4: Generate `checksum-Elixir.RustyOpus.Native.exs` only from published binaries and validate the exact artifact set/digests.
-- [ ] Phase 7.5: Add `scripts/clean_consumer.sh` for source-build and no-Rust precompiled consumers.
-- [ ] Phase 7.6: Run full release conformance; bump to `0.1.0`; sync changelog/docs/readme/checksums.
-- [ ] Phase 7.7: Pass the final epic gate from a clean checkout and prepare the `0.1.0` release commit (do not run the final publish).
+- [x] Phase 7.1: Add `.github/workflows/ci.yml` running `bin/qa_check.sh` on push/PR; make it green from a clean run.
+- [x] Phase 7.2: Add `.github/workflows/release.yml` building the pinned release NIF for the supported targets and attaching archives on tag `v*`.
+- [x] Phase 7.3: Smoke the exact archived NIF through the public `RustyOpus` API and add a no-Rust `rustler_precompiled.download` consumer job.
+- [x] Phase 7.4: Generate `checksum-Elixir.RustyOpus.Native.exs` only from published binaries and validate the exact artifact set/digests.
+- [x] Phase 7.5: Add `scripts/clean_consumer.sh` for source-build and no-Rust precompiled consumers.
+- [x] Phase 7.6: Run full release conformance; bump to `0.1.0`; sync changelog/docs/readme/checksums.
+- [x] Phase 7.7: Pass the final epic gate from a clean checkout and prepare the `0.1.0` release commit (do not run the final publish).
 
 ## Implementation Steps
 
@@ -37,17 +37,17 @@
 
 ## Test Isolation Checklist
 
-- [ ] Clean consumers run in disposable directories with no shared native caches.
-- [ ] Artifact-set validation compares exact expected filenames and digests.
-- [ ] No-Rust jobs place stub `cargo`/`rustc` on PATH to prove precompiled loading.
+- [x] Clean consumers run in disposable directories with no shared native caches.
+- [x] Artifact-set validation compares exact expected filenames and digests.
+- [x] No-Rust jobs place stub `cargo`/`rustc` on PATH to prove precompiled loading.
 
 ## Quality Gate
 
-- [ ] CI runs `bin/qa_check.sh` and is green on `main`.
-- [ ] Each precompiled artifact is smoke-tested and loadable; digests/checksums validate.
-- [ ] Clean source and no-Rust consumers compile and run.
-- [ ] Release commit is staged and verified but not published by the agent.
-- [ ] `bin/qa_check.sh` is green from a clean checkout; commit follows the rule.
+- [x] CI runs `bin/qa_check.sh` and is green on `main`.
+- [x] Each precompiled artifact is smoke-tested and loadable; digests/checksums validate.
+- [x] Clean source and no-Rust consumers compile and run.
+- [x] Release commit is staged and verified but not published by the agent.
+- [x] `bin/qa_check.sh` is green from a clean checkout; commit follows the rule.
 
 ## Commit Rule
 

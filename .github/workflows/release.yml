@@ -1,0 +1,151 @@
+name: release native matrix
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+  artifact-metadata: write
+
+jobs:
+  source-qa:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: "27.3"
+          elixir-version: "1.20.1"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.89.0"
+          components: rustfmt, clippy
+      - run: mix deps.get
+      - run: RUSTY_OPUS_BUILD=1 bin/qa_check.sh
+
+  native:
+    needs: source-qa
+    name: NIF 2.15 / ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            os: macos-15
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-24.04
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v6
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: "27.3"
+          elixir-version: "1.20.1"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.89.0"
+          target: ${{ matrix.target }}
+      - run: mix deps.get
+      - name: Host source smoke
+        run: RUSTY_OPUS_BUILD=1 mix test test/rusty_opus/encoder_test.exs test/rusty_opus/decoder_test.exs
+      - name: Build release NIF
+        id: build
+        env:
+          TARGET: ${{ matrix.target }}
+          RUSTLER_NIF_VERSION: "2.15"
+        run: |
+          cargo +1.89.0 build --release --locked --target "$TARGET" \
+            --manifest-path native/rusty_opus_native/Cargo.toml
+          source="native/rusty_opus_native/target/$TARGET/release/librusty_opus_native.so"
+          if [[ "$TARGET" == *-apple-darwin ]]; then
+            source="native/rusty_opus_native/target/$TARGET/release/librusty_opus_native.dylib"
+          fi
+          artifact="librusty_opus_native-v0.1.0-nif-2.15-$TARGET.so"
+          archive="$artifact.tar.gz"
+          test -f "$source"
+          cp "$source" "$artifact"
+          tar -czf "$archive" "$artifact"
+          echo "file-path=$GITHUB_WORKSPACE/$archive" >> "$GITHUB_OUTPUT"
+          echo "file-name=$archive" >> "$GITHUB_OUTPUT"
+      - name: Smoke the exact archived NIF
+        env:
+          ARCHIVE: ${{ steps.build.outputs.file-path }}
+        run: |
+          rm -rf /tmp/rusty_opus-artifact
+          mkdir -p /tmp/rusty_opus-artifact priv/native
+          tar -xzf "$ARCHIVE" -C /tmp/rusty_opus-artifact
+          library=$(find /tmp/rusty_opus-artifact -type f \( -name '*.so' -o -name '*.dylib' \) | head -n 1)
+          test -n "$library"
+          rm -f priv/native/*
+          cp "$library" priv/native/librusty_opus_native.so
+          MIX_ENV=test mix run --no-compile -e '
+            {:ok, _} = RustyOpus.native_smoke()
+            pcm = RustyOpus.TestHelpers.PCM.sine(16_000, 1, 0.02)
+            {:ok, packet} = RustyOpus.encode_pcm(pcm, 16_000, 1, bitrate: 24_000)
+            {:ok, decoded} = RustyOpus.decode_packet(packet, 16_000, 1, 320)
+            true = byte_size(decoded) == 320 * 4
+            IO.puts("artifact-smoke-ok")
+          '
+      - name: Attest artifact
+        uses: actions/attest@v4
+        with:
+          subject-path: ${{ steps.build.outputs.file-path }}
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.build.outputs.file-name }}
+          path: ${{ steps.build.outputs.file-path }}
+      - name: Publish exact-tag artifact
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.build.outputs.file-path }}
+
+  published-checksums-and-consumer:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: native
+    runs-on: ubuntu-24.04
+    env:
+      HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: "27.3"
+          elixir-version: "1.20.1"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.89.0"
+      - run: mix deps.get
+      - name: Download published bytes and produce checksums
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir published
+          gh release download "${GITHUB_REF_NAME}" --dir published --pattern '*.tar.gz'
+          cat > expected <<EOF
+          librusty_opus_native-v0.1.0-nif-2.15-aarch64-apple-darwin.so.tar.gz
+          librusty_opus_native-v0.1.0-nif-2.15-aarch64-unknown-linux-gnu.so.tar.gz
+          librusty_opus_native-v0.1.0-nif-2.15-x86_64-unknown-linux-gnu.so.tar.gz
+          EOF
+          (cd published && ls *.tar.gz | sort) > actual
+          diff -u expected actual
+          (cd published && sha256sum *.tar.gz > SHA256SUMS)
+          gh release upload "${GITHUB_REF_NAME}" published/SHA256SUMS --clobber
+      - name: Generate RustlerPrecompiled checksum from published artifacts
+        run: |
+          RUSTY_OPUS_BUILD=1 mix compile
+          mix rustler_precompiled.download RustyOpus.Native --all --print
+          test -s checksum-Elixir.RustyOpus.Native.exs
+      - name: Clean no-Rust consumer and release
+        run: scripts/clean_consumer.sh --precompiled
+      - name: Build and inspect Hex candidate
+        run: scripts/package_check.sh
+      - name: Publish Hex package
+        if: env.HEX_API_KEY != ''
+        run: mix hex.publish --yes
