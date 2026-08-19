@@ -52,9 +52,9 @@ Constraints that still hold:
 ## Consequences
 
 - `reencode/2` wall time on Apple Silicon should move from ~1 s to tens of ms for the
-  MemoMoo ~7 s fixture (order-of-magnitude improvement), proven by
+  committed ~7 s speech fixture (order-of-magnitude improvement), proven by
   `scripts/bench_reencode.exs`.
 - One Opus implementation in the tree (`opus-rs`); Ogg code is small and auditable.
-- Multistream / non–family-0 Ogg remains unsupported (same as the prior `ruopus` path’s
-  practical limit for MemoMoo blobs).
+- Multistream / non–family-0 Ogg remains unsupported (same practical limit for
+  typical mono/stereo file blobs).
 - NOTICE / provenance drop `ruopus`; ADR002’s “no Ogg” wording is narrowed by this ADR.

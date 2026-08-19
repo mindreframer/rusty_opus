@@ -19,9 +19,8 @@ That means the agent will properly set up the roadmap. It will create the corres
 Okay, and this is done in self-management by the agent.
 The thing the agent will not do is actually release the library. Okay, because this is not possible, but the rest, like pushing to GitHub, monitoring everything, making sure that text is for our code is formatted and properly compiling before committing anything, and we have really meaningful tests, this is important.
 
-you can find some Opus files embedded in this SQLITE DB: /Users/roman/Desktop/work/prj.memomoo/MOO_MATERIAL/moo_courses_v3/elixir/moo_courses_v3/data/moo_courses_v3_dev.db
-
-You can freely use a few of them as fixtures for you.
+You can supply a few real Ogg Opus clips as fixtures (for example from a local
+SQLite DB via `FIXTURE_OGG_DB` and `scripts/import_fixtures.sh`).
 
 Please analyze everything and then create me a corresponding roadmap that really makes sure things are properly executed. Be smart and try to reuse as much as possible, but keep it as simple as possible, do not over-engineer.
 

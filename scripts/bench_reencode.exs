@@ -1,4 +1,4 @@
-# Benchmark RustyOpus.reencode/2 on a real MemoMoo Ogg Opus fixture.
+# Benchmark RustyOpus.reencode/2 on a committed Ogg Opus speech fixture.
 #
 #   RUSTY_OPUS_BUILD=1 mix run scripts/bench_reencode.exs
 #   RUSTY_OPUS_BUILD=1 mix run scripts/bench_reencode.exs path/to/file.ogg
@@ -10,7 +10,7 @@
 path =
   case System.argv() do
     [p | _] -> p
-    [] -> Path.expand("../test/fixtures/moo_audio_versions_1.ogg", __DIR__)
+    [] -> Path.expand("../test/fixtures/speech_ogg_1.ogg", __DIR__)
   end
 
 unless File.regular?(path) do

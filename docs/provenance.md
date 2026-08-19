@@ -43,7 +43,7 @@ exactly what `Cargo.lock` records.
 
 - PCM / raw-packet fixtures are imported by `scripts/import_fixtures.sh` (developer-side;
   ffmpeg only there).
-- `test/fixtures/moo_audio_versions_1.ogg` is a real MemoMoo `audio_versions` Ogg Opus
-  speech blob used by `reencode/2` tests. Tests never open the live SQLite DB.
+- `test/fixtures/speech_ogg_1.ogg` is a committed Ogg Opus speech blob used by
+  `reencode/2` tests. Tests never open an external database.
   The native NIF is always built in **release** mode so multi-second Opus work stays
   in the millisecond–low-second range under `mix test`.

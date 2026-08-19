@@ -5,14 +5,19 @@ root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
 cd "$root"
 
 # Developer-side fixture importer. The committed fixtures are stable, so tests never
-# need this script, the SQLite DB, or ffmpeg at runtime.
-db=${MOO_COURSES_DB:-"/Users/roman/Desktop/work/prj.memomoo/MOO_MATERIAL/moo_courses_v3/elixir/moo_courses_v3/data/moo_courses_v3_dev.db"}
+# need this script, a SQLite DB, or ffmpeg at runtime.
+# Set FIXTURE_OGG_DB to a SQLite database with an audio_versions(audio_data) table.
+if [ -z "${FIXTURE_OGG_DB:-}" ]; then
+  echo "set FIXTURE_OGG_DB to a SQLite path with Ogg Opus blobs" >&2
+  exit 1
+fi
+db=$FIXTURE_OGG_DB
 fixture_dir=test/fixtures
 tmpdir=$(mktemp -d)
 trap 'rm -rf "$tmpdir"' EXIT
 
 if [ ! -f "$db" ]; then
-  echo "fixture DB not found at $db (set MOO_COURSES_DB)" >&2
+  echo "fixture DB not found at $db (set FIXTURE_OGG_DB)" >&2
   exit 1
 fi
 

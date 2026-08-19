@@ -16,7 +16,7 @@ process.
 {:ok, smaller} = RustyOpus.reencode(ogg_blob, bitrate: 20_000)
 ```
 
-That is the whole call. Useful ladder values match MemoMoo-style profiles:
+That is the whole call. Useful bitrate ladder values:
 `8_000`, `12_000`, `16_000`, `20_000`, `24_000`, `32_000`.
 
 ## Quick start
@@ -71,8 +71,8 @@ Other targets can build from source with `RUSTY_OPUS_BUILD=1` and Rust 1.89.0.
 bin/qa_check.sh
 ```
 
-Committed fixtures include real MemoMoo `audio_versions` Ogg Opus speech blobs for
-`reencode/2` tests. Tests need neither the live DB nor ffmpeg.
+Committed fixtures include an Ogg Opus speech blob for `reencode/2` tests.
+Tests need neither a live database nor ffmpeg.
 
 ## Release
 

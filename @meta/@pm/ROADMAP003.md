@@ -3,8 +3,8 @@
 **Status:** Complete
 
 Shipped `0.3.0` with `RustyOpus.reencode/2`: Ogg Opus blob + numeric `bitrate:` →
-smaller Ogg Opus blob via pure-Rust `ruopus`. Hard-tested on real MemoMoo
-`audio_versions` fixtures. No ffmpeg. Packet/PCM APIs unchanged. Hex/precompiled
+smaller Ogg Opus blob via pure-Rust `ruopus`. Hard-tested on committed Ogg Opus
+speech fixtures. No ffmpeg. Packet/PCM APIs unchanged. Hex/precompiled
 publish remains the maintainer’s step.
 
 - **Scope:** One Elixir call takes an Ogg Opus blob and a bitrate in bits/s, returns a smaller Ogg Opus blob. Pure Rust (`ruopus`). No ffmpeg. No C libopus. No `:low`/`:medium`/`:high`. Version `0.3.0`.
@@ -27,12 +27,12 @@ Two epics, in order. Spec + plan in `@meta/@pm/roadmap003/`. After each epic: `b
 - [x] Depend on `ruopus` in `native/rusty_opus_native` (pin a concrete version; audit license).
 - [x] `ogg_reencode(blob, bitrate)` NIF — DirtyCpu; panic-contained; tagged errors.
 - [x] `RustyOpus.reencode/2` — `bitrate:` required positive integer.
-- [x] Tests: MemoMoo `audio_versions` fixtures; smaller + still-valid Ogg Opus; no ffmpeg.
+- [x] Tests: committed Ogg Opus fixtures; smaller + still-valid Ogg Opus; no ffmpeg.
 
 ## Epic 2 — Docs, fixtures, `0.3.0`
 
 - [x] README / moduledoc lead with `reencode/2` and numeric bitrates.
-- [x] Fixture + MemoMoo ladder notes (`8_000` … `32_000`).
+- [x] Fixture + bitrate ladder notes (`8_000` … `32_000`).
 - [x] Changelog, Mix/Cargo `0.3.0`, `bin/qa_check.sh` green, ROADMAP003 Complete.
 
 ## Success

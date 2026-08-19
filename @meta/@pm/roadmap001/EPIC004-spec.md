@@ -9,9 +9,8 @@ real-world audio fixtures from the Opus audio DB so tests run against genuine sp
 
 - Roadmap Epics 2 (encoder) and 3 (decoder)
 - `RustyOpus.Encoder` and `RustyOpus.Decoder` from Epics 2–3
-- Ogg/Opus audio files in
-  `MOO_MATERIAL/moo_courses_v3/elixir/moo_courses_v3/data/moo_courses_v3_dev.db`
-  (the `audio_versions` table stores `audio/ogg` blobs)
+- Ogg/Opus audio available from a developer-side SQLite DB (set `FIXTURE_OGG_DB`);
+  the import script reads `audio/ogg` blobs from an `audio_versions`-style table
 - Existing ffmpeg tooling that already produced bitrate variants (8k–32k) of this audio
 
 ## Scope

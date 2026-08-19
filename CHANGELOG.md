@@ -12,7 +12,7 @@
 
 - `reencode/2` uses pinned `opus-rs` (NEON on aarch64) plus thin in-crate Ogg Opus
   family-0 demux/mux; drops `ruopus` (see ADR003).
-- Same Elixir API (`bitrate:` required). MemoMoo ~7 s fixture: ~24 ms median at
+- Same Elixir API (`bitrate:` required). ~7 s speech fixture: ~24 ms median at
   20 kb/s vs ~965 ms with `ruopus` on M3 Ultra (~40×).
 - Packet/PCM APIs unchanged.
 
@@ -20,7 +20,7 @@
 
 - `RustyOpus.reencode/2` takes an Ogg Opus blob and `bitrate:` (bits/s) and returns a
   smaller Ogg Opus blob. Pure Rust. No ffmpeg, no C libopus, no quality atoms.
-- Hard-tested against real MemoMoo `audio_versions` speech fixtures.
+- Hard-tested against committed Ogg Opus speech fixtures.
 - Packet/PCM APIs from 0.2.0 are unchanged.
 
 ## 0.2.0 — Whole-stream encode, decode, and transcode

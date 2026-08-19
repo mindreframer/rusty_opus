@@ -4,8 +4,8 @@ defmodule RustyOpus.ReencodeTest do
 
   alias RustyOpus.Error
 
-  # Real MemoMoo audio_versions Ogg Opus speech (committed fixture).
-  @fixture Path.expand("../fixtures/moo_audio_versions_1.ogg", __DIR__)
+  # Committed Ogg Opus speech fixture (~7s).
+  @fixture Path.expand("../fixtures/speech_ogg_1.ogg", __DIR__)
 
   # Hard cap after ADR003 (opus-rs + NEON): ~7s speech stays well under 1s on CI.
   @max_reencode_ms 1_000

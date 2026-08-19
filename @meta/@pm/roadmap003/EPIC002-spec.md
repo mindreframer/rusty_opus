@@ -16,7 +16,7 @@ fixture, bump to `0.3.0`, and close ROADMAP003. Publish stays with the maintaine
 In scope:
 
 - README quick start and `RustyOpus` moduledoc: Ogg blob reencode with numeric bitrate first.
-- Docs note MemoMoo-style ladder (`8_000`, `12_000`, `16_000`, `20_000`, `24_000`, `32_000`).
+- Docs note a typical bitrate ladder (`8_000`, `12_000`, `16_000`, `20_000`, `24_000`, `32_000`).
 - Ensure fixture used in tests is committed and documented.
 - Version `0.3.0` across Mix, Cargo, lockfiles, changelog.
 - Mark ROADMAP003 Complete after green QA.

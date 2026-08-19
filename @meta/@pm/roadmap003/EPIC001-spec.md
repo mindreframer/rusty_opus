@@ -11,7 +11,7 @@ no C libopus.
 - Roadmap: `@meta/@pm/ROADMAP003.md`
 - Crate: [`ruopus`](https://crates.io/crates/ruopus) — `decode_ogg_opus/1`, `encode_ogg_opus/3`
 - Existing surface: packet/PCM APIs on `opus-rs` (leave behavior unchanged)
-- Caller shape: MemoMoo `audio_versions.audio_data` (`audio/ogg` blobs)
+- Caller shape: Ogg Opus blobs (`audio/ogg` / RFC 7845)
 
 ## Scope
 

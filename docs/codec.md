@@ -22,7 +22,7 @@ RustyOpus wraps pure-Rust Opus through Rustler.
 {:ok, smaller} = RustyOpus.reencode(ogg_blob, bitrate: 20_000)
 ```
 
-`:bitrate` is required (bits/s). Typical MemoMoo ladder: `8_000` … `32_000`.
+`:bitrate` is required (bits/s). Typical ladder: `8_000` … `32_000`.
 
 ## Supported configuration (packet/PCM path)
 
