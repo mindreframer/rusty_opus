@@ -1,0 +1,4 @@
+# Opus NIFs load into the BEAM as a shared library. A statically linked musl CRT
+# cannot be used in a cdylib, so keep musl release artifacts dynamically linked.
+[target.'cfg(target_env = "musl")']
+rustflags = ["-C", "target-feature=-crt-static"]

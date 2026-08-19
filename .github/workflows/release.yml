@@ -138,7 +138,8 @@ jobs:
                 rm -rf /var/lib/apt/lists/*
               fi
               rustc -vV | grep -q "^host: $TARGET$"
-              cargo build --locked --release --target "$TARGET"
+              # Native build inside the matching image (do not pass --target).
+              cargo build --locked --release
             '
           sudo chown -R "$(id -u):$(id -g)" "native/rusty_opus_native/target/$TARGET"
 
@@ -182,6 +183,7 @@ jobs:
         shell: bash
         env:
           ARCHIVE: ${{ steps.artifact.outputs.file-path }}
+          MIX_ENV: test
         run: |
           mix deps.get
           RUSTY_OPUS_BUILD=1 mix compile
@@ -192,7 +194,7 @@ jobs:
           test -n "$library"
           rm -f priv/native/*
           cp "$library" priv/native/librusty_opus_native.so
-          MIX_ENV=test mix run --no-compile -e '
+          mix run --no-compile --no-start -e '
             {:ok, _} = RustyOpus.native_smoke()
             pcm = RustyOpus.TestHelpers.PCM.sine(16_000, 1, 0.02)
             {:ok, packet} = RustyOpus.encode_pcm(pcm, 16_000, 1, bitrate: 24_000)
