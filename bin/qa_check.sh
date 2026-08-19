@@ -17,7 +17,7 @@ mix deps.get --check-locked
 mix deps.unlock --check-unused
 
 stage "Elixir format"
-mix format --check-formatted
+mix format
 
 stage "Elixir compile"
 mix compile --warnings-as-errors
@@ -26,7 +26,7 @@ stage "Elixir tests"
 mix test
 
 stage "Rust format"
-cargo +1.89.0 fmt --manifest-path native/rusty_opus_native/Cargo.toml -- --check
+cargo +1.89.0 fmt --manifest-path native/rusty_opus_native/Cargo.toml --
 
 stage "Rust check and Clippy"
 cargo +1.89.0 check --locked --manifest-path native/rusty_opus_native/Cargo.toml

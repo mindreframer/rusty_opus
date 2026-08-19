@@ -61,6 +61,22 @@ defmodule RustyOpus do
 
   @doc false
   def rustle(reason, message) do
-    %RustyOpus.Error{reason: reason, message: message}
+    %RustyOpus.Error{reason: normalize_reason(reason), message: message}
   end
+
+  @reasons %{
+    "native" => :native,
+    "closed" => :closed,
+    "poisoned" => :poisoned,
+    "invalid_pcm" => :invalid_pcm,
+    "invalid_input" => :invalid_input,
+    "invalid_settings" => :invalid_settings,
+    "invalid_application" => :invalid_application,
+    "invalid_rate" => :invalid_rate,
+    "encode_failed" => :encode_failed,
+    "decode_failed" => :decode_failed
+  }
+
+  defp normalize_reason(reason) when is_binary(reason), do: Map.get(@reasons, reason, reason)
+  defp normalize_reason(reason), do: reason
 end

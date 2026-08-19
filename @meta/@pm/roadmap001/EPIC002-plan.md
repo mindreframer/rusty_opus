@@ -2,13 +2,13 @@
 
 ## Progress
 
-- [ ] Phase 2.1: Register the encoder resource and implement `encoder_new/4` with full validation.
-- [ ] Phase 2.2: Implement f32le-PCM-binary ↔ `&[f32]` marshalling and reject mis-sized input.
-- [ ] Phase 2.3: Implement `encoder_encode/3` with frame-size validation, capacity-safe output, and dirty scheduling.
-- [ ] Phase 2.4: Wire bitrate, complexity, CBR/VBR, in-band FEC, and packet-loss settings plus setters.
-- [ ] Phase 2.5: Add `RustyOpus.Encoder`, the settings validation layer, and stable error mapping.
-- [ ] Phase 2.6: Add encoder construction, round-trip, bitrate-order, CBR-bounded, and cleanup tests.
-- [ ] Phase 2.7: Pass the epic gate, verify every Epic 2 criterion, and prepare the focused commit.
+- [x] Phase 2.1: Register the encoder resource and implement `encoder_new/4` with full validation.
+- [x] Phase 2.2: Implement f32le-PCM-binary ↔ `&[f32]` marshalling and reject mis-sized input.
+- [x] Phase 2.3: Implement `encoder_encode/3` with frame-size validation, capacity-safe output, and dirty scheduling.
+- [x] Phase 2.4: Wire bitrate, complexity, CBR/VBR, in-band FEC, and packet-loss settings plus setters.
+- [x] Phase 2.5: Add `RustyOpus.Encoder`, the settings validation layer, and stable error mapping.
+- [x] Phase 2.6: Add encoder construction, round-trip, bitrate-order, CBR-bounded, and cleanup tests.
+- [x] Phase 2.7: Pass the epic gate, verify every Epic 2 criterion, and prepare the focused commit.
 
 ## Implementation Steps
 
@@ -37,11 +37,11 @@
 
 ## Quality Gate
 
-- [ ] Settings validation and error mapping are stable and complete.
-- [ ] `encode/3` returns the Opus-binary contract and dirty schedules large frames.
-- [ ] Bitrate-order and CBR-bounded tests pass.
-- [ ] Close is idempotent; owner death frees the resource.
-- [ ] `bin/qa_check.sh` is green; commit follows the rule.
+- [x] Settings validation and error mapping are stable and complete.
+- [x] `encode/3` returns the Opus-binary contract and dirty schedules large frames.
+- [x] Bitrate-order and CBR-bounded tests pass.
+- [x] Close is idempotent; owner death frees the resource.
+- [x] `bin/qa_check.sh` is green; commit follows the rule.
 
 ## Commit Rule
 

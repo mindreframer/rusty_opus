@@ -1,7 +1,7 @@
 //! `RustyOpus` native NIF library.
 //!
-//! Epic 1 wires only the deterministic smoke/error boundary. Encoder and decoder
-//! NIFs are added in later epics.
+//! Wires the deterministic smoke/error boundary and the Opus encoder/decoder
+//! resources around the pinned `opus-rs` codec.
 
 use std::panic::{catch_unwind, AssertUnwindSafe};
 
@@ -15,6 +15,10 @@ mod atoms {
         contained_panic
     }
 }
+
+mod encoder;
+
+use encoder::{EncoderResource, NativeSettings};
 
 #[rustler::nif]
 fn smoke() -> (Atom, &'static str) {
@@ -45,8 +49,46 @@ fn contained_panic() -> (Atom, Atom, &'static str) {
     }
 }
 
-const fn load(_env: Env<'_>, _load_info: Term<'_>) -> bool {
-    true
+#[rustler::nif]
+fn encoder_new(
+    rate: i64,
+    channels: usize,
+    application: String,
+    settings: NativeSettings,
+) -> Result<rustler::ResourceArc<EncoderResource>, (String, String)> {
+    encoder::encoder_new(rate, channels, application, settings)
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+fn encoder_encode<'a>(
+    env: rustler::Env<'a>,
+    resource: rustler::ResourceArc<EncoderResource>,
+    pcm: rustler::Binary<'a>,
+    frame_size: usize,
+) -> Result<rustler::Binary<'a>, (String, String)> {
+    encoder::encoder_encode(env, resource, pcm, frame_size)
+}
+
+#[rustler::nif]
+fn encoder_set(
+    resource: rustler::ResourceArc<EncoderResource>,
+    settings: NativeSettings,
+) -> Result<(), (String, String)> {
+    encoder::encoder_set(resource, settings)
+}
+
+#[rustler::nif]
+fn encoder_close(resource: rustler::ResourceArc<EncoderResource>) -> Result<(), (String, String)> {
+    encoder::encoder_close(resource)
+}
+
+#[rustler::nif]
+fn encoder_count() -> usize {
+    encoder::encoder_count()
+}
+
+fn load(env: Env<'_>, _load_info: Term<'_>) -> bool {
+    env.register::<EncoderResource>().is_ok()
 }
 
 rustler::init!("Elixir.RustyOpus.Native", load = load);

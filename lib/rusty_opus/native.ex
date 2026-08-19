@@ -26,4 +26,12 @@ defmodule RustyOpus.Native do
   def smoke, do: :erlang.nif_error(:nif_not_loaded)
   def translated_error, do: :erlang.nif_error(:nif_not_loaded)
   def contained_panic, do: :erlang.nif_error(:nif_not_loaded)
+
+  def encoder_new(_rate, _channels, _application, _settings),
+    do: :erlang.nif_error(:nif_not_loaded)
+
+  def encoder_encode(_resource, _pcm, _frame_size), do: :erlang.nif_error(:nif_not_loaded)
+  def encoder_set(_resource, _settings), do: :erlang.nif_error(:nif_not_loaded)
+  def encoder_close(_resource), do: :erlang.nif_error(:nif_not_loaded)
+  def encoder_count, do: :erlang.nif_error(:nif_not_loaded)
 end

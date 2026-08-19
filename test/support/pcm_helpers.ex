@@ -29,9 +29,9 @@ defmodule RustyOpus.TestHelpers.PCM do
   @doc """
   Generate `n` seconds of a deterministic sine wave at the given rate/channels.
   """
-  @spec sine(non_neg_integer(), pos_integer(), non_neg_integer(), float()) :: binary()
+  @spec sine(non_neg_integer(), pos_integer(), number(), float()) :: binary()
   def sine(rate, channels, seconds, frequency \\ 440.0) do
-    total = rate * channels * seconds
+    total = max(trunc(rate * channels * seconds), 0)
 
     samples =
       for i <- 0..(total - 1)//1 do
