@@ -60,19 +60,22 @@ jobs:
           TARGET: ${{ matrix.target }}
           RUSTLER_NIF_VERSION: "2.15"
         run: |
+          VERSION=$(sed -n 's/.*@version "\([^"]*\)".*/\1/p' mix.exs | head -1)
+          test -n "$VERSION"
           cargo +1.89.0 build --release --locked --target "$TARGET" \
             --manifest-path native/rusty_opus_native/Cargo.toml
           source="native/rusty_opus_native/target/$TARGET/release/librusty_opus_native.so"
           if [[ "$TARGET" == *-apple-darwin ]]; then
             source="native/rusty_opus_native/target/$TARGET/release/librusty_opus_native.dylib"
           fi
-          artifact="librusty_opus_native-v0.1.0-nif-2.15-$TARGET.so"
+          artifact="librusty_opus_native-v${VERSION}-nif-2.15-$TARGET.so"
           archive="$artifact.tar.gz"
           test -f "$source"
           cp "$source" "$artifact"
           tar -czf "$archive" "$artifact"
           echo "file-path=$GITHUB_WORKSPACE/$archive" >> "$GITHUB_OUTPUT"
           echo "file-name=$archive" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
       - name: Smoke the exact archived NIF
         env:
           ARCHIVE: ${{ steps.build.outputs.file-path }}
@@ -126,12 +129,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          VERSION=$(sed -n 's/.*@version "\([^"]*\)".*/\1/p' mix.exs | head -1)
+          test -n "$VERSION"
           mkdir published
           gh release download "${GITHUB_REF_NAME}" --dir published --pattern '*.tar.gz'
           cat > expected <<EOF
-          librusty_opus_native-v0.1.0-nif-2.15-aarch64-apple-darwin.so.tar.gz
-          librusty_opus_native-v0.1.0-nif-2.15-aarch64-unknown-linux-gnu.so.tar.gz
-          librusty_opus_native-v0.1.0-nif-2.15-x86_64-unknown-linux-gnu.so.tar.gz
+          librusty_opus_native-v${VERSION}-nif-2.15-aarch64-apple-darwin.so.tar.gz
+          librusty_opus_native-v${VERSION}-nif-2.15-aarch64-unknown-linux-gnu.so.tar.gz
+          librusty_opus_native-v${VERSION}-nif-2.15-x86_64-unknown-linux-gnu.so.tar.gz
           EOF
           (cd published && ls *.tar.gz | sort) > actual
           diff -u expected actual
