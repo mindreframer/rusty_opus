@@ -1,7 +1,8 @@
 //! `RustyOpus` native NIF library.
 //!
-//! Wires the deterministic smoke/error boundary and the Opus encoder/decoder
-//! resources around the pinned `opus-rs` codec.
+//! Wires the deterministic smoke/error boundary, the Opus encoder/decoder
+//! resources around the pinned `opus-rs` codec, and Ogg Opus blob reencode
+//! via pure-Rust `ruopus`.
 
 use std::panic::{catch_unwind, AssertUnwindSafe};
 
@@ -18,6 +19,7 @@ mod atoms {
 
 mod decoder;
 mod encoder;
+mod ogg;
 
 use decoder::DecoderResource;
 use encoder::{EncoderResource, NativeSettings};
@@ -135,6 +137,15 @@ fn decoder_close(resource: rustler::ResourceArc<DecoderResource>) -> Result<(), 
 #[rustler::nif]
 fn decoder_count() -> usize {
     decoder::decoder_count()
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+fn ogg_reencode<'a>(
+    env: rustler::Env<'a>,
+    blob: rustler::Binary<'a>,
+    bitrate: u32,
+) -> Result<rustler::Binary<'a>, (String, String)> {
+    ogg::ogg_reencode(env, blob, bitrate)
 }
 
 fn load(env: Env<'_>, _load_info: Term<'_>) -> bool {

@@ -11,6 +11,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 opus-rs = "=0.1.29"
+ruopus = { version = "=0.1.2", default-features = false, features = ["std"] }
 rustler = "=0.36.2"
 
 [lints.rust]

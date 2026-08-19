@@ -46,4 +46,6 @@ defmodule RustyOpus.Native do
 
   def decoder_close(_resource), do: :erlang.nif_error(:nif_not_loaded)
   def decoder_count, do: :erlang.nif_error(:nif_not_loaded)
+
+  def ogg_reencode(_blob, _bitrate), do: :erlang.nif_error(:nif_not_loaded)
 end

@@ -1,29 +1,27 @@
 defmodule RustyOpus do
   @moduledoc """
-  Pure-Rust [Opus](https://opus-codec.org/) (RFC 6716) for Elixir, wrapped from the
-  `opus-rs` codec through Rustler.
+  Pure-Rust [Opus](https://opus-codec.org/) (RFC 6716) for Elixir.
 
-  Encode a PCM buffer, decode a packet list, or transcode to a new quality in one call:
+  Shrink an Ogg Opus blob to a numeric bitrate in one call (no ffmpeg, no C libopus):
 
-      {:ok, packets} = RustyOpus.encode(pcm, 16_000, 1, quality: :medium)
+      {:ok, smaller} = RustyOpus.reencode(ogg_blob, bitrate: 20_000)
+
+  Raw packet/PCM helpers remain for codec work without a container:
+
+      {:ok, packets} = RustyOpus.encode(pcm, 16_000, 1, bitrate: 24_000)
       {:ok, pcm}     = RustyOpus.decode(packets, 16_000, 1)
-      {:ok, smaller} = RustyOpus.transcode(packets, 16_000, 1, :low)
-
-  Frame size defaults to 20 ms (`div(rate, 50)`). A short last encode frame is padded
-  with silence. For per-frame control see `RustyOpus.Encoder` / `RustyOpus.Decoder`;
-  single-frame helpers are `encode_pcm/4`, `decode_packet/4`, and `change_quality/5`.
 
   ## Data contract
 
+  - **Ogg Opus** blobs are RFC 7845 files (`OggS` …) — the `reencode/2` input/output.
   - **PCM** is a binary of 32-bit little-endian IEEE-754 `f32` samples, interleaved
     for stereo.
-  - **Opus packets** are raw binaries.
+  - **Opus packets** are raw binaries (no container).
 
   ## Boundary
 
-  RustyOpus targets the raw Opus CODEC. It does not parse, demux, or mux media
-  containers (such as Ogg/Opus `.ogg` files). It never launches an external process,
-  a Port, or an executable for codec work.
+  Codec and Ogg Opus reencode run in-process via Rustler. No external process, Port,
+  or executable is used for codec work.
   """
 
   @doc """
@@ -60,6 +58,41 @@ defmodule RustyOpus do
       other -> {:ok, other}
     end
   end
+
+  @doc """
+  Reencodes an Ogg Opus blob at a target bitrate (bits/s).
+
+  This is the simple API for shrinking real `.ogg` / `audio/ogg` files in memory:
+  demux → decode → encode at `bitrate` → remux, all pure Rust (`ruopus`).
+
+  ## Options
+
+    * `:bitrate` (required) — positive integer, bits per second (e.g. `20_000`)
+
+  ## Example
+
+      {:ok, smaller} = RustyOpus.reencode(ogg_blob, bitrate: 20_000)
+  """
+  @spec reencode(binary(), keyword()) :: {:ok, binary()} | {:error, RustyOpus.Error.t()}
+  def reencode(blob, opts \\ [])
+
+  def reencode(blob, opts) when is_binary(blob) and is_list(opts) do
+    case Keyword.fetch(opts, :bitrate) do
+      {:ok, bitrate} when is_integer(bitrate) and bitrate > 0 ->
+        case RustyOpus.Native.ogg_reencode(blob, bitrate) do
+          {:ok, out} -> {:ok, out}
+          {:error, {reason, message}} -> {:error, rustle(reason, message)}
+        end
+
+      {:ok, _} ->
+        {:error, rustle(:invalid_settings, "bitrate must be a positive integer")}
+
+      :error ->
+        {:error, rustle(:invalid_settings, "bitrate is required")}
+    end
+  end
+
+  def reencode(_, _), do: {:error, rustle(:invalid_input, "Ogg Opus blob must be a binary")}
 
   @doc """
   Encodes a whole PCM buffer into a list of Opus packets.

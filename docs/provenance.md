@@ -18,6 +18,16 @@ and licenses so a build is reproducible and the third-party surface is auditable
 RustyOpus does **not** modify `opus-rs`. It wraps the public `OpusEncoder`/`OpusDecoder`
 API through Rustler. The pinned revision is exactly what `Cargo.lock` records.
 
+## Ogg Opus reencode: ruopus
+
+- **Crate:** `ruopus`
+- **Version:** `0.1.2` (pinned exactly; `default-features = false`, features = `["std"]`
+  so optional spectrogram deps that need a newer rustc are not pulled in)
+- **Repository:** <https://github.com/jmg049/ruopus>
+- **License:** MIT (see `NOTICE`)
+- **Role:** `decode_ogg_opus` / `encode_ogg_opus` behind `RustyOpus.reencode/2`. No C
+  libopus and no ffmpeg on this path.
+
 ## NIF layer: rustler
 
 - **Crate:** `rustler`
@@ -39,7 +49,7 @@ API through Rustler. The pinned revision is exactly what `Cargo.lock` records.
 
 ## Fixtures
 
-Test fixtures are imported from pre-existing Opus audio during development by
-`scripts/import_fixtures.sh`. The source Ogg/Opus files come from an internal SQLite
-audio database and are decoded to PCM before being committed as compact fixture files.
-See `docs/codec.md` for the fixture layout.
+- PCM / raw-packet fixtures are imported by `scripts/import_fixtures.sh` (developer-side;
+  ffmpeg only there).
+- `test/fixtures/moo_audio_versions_*.ogg` are real MemoMoo `audio_versions` Ogg Opus
+  speech blobs used by `reencode/2` tests. Tests never open the live SQLite DB.

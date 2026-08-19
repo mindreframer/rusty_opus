@@ -16,7 +16,13 @@
 ## Native Boundary
 
 - RustyOpus exposes the pure-Rust `opus-rs` codec through a Rustler NIF. It must not shell out to ffmpeg, launch a Port, or spawn a process for codec work in the library path. ffmpeg appears only in fixture-import tooling, never in runtime or test code under test.
-- RustyOpus wraps the raw Opus CODEC (RFC 6716). It encodes PCM to Opus packets and decodes Opus packets to PCM. It must not parse, demux, or mux the Ogg container; the Ogg/Opus `.ogg` files in the fixture DB are pre-decoded to PCM by the import script before becoming test fixtures.
+- RustyOpus wraps the raw Opus CODEC (RFC 6716) for packet/PCM work and, via pure-Rust
+  `ruopus`, can demux/remux **Ogg Opus** for `RustyOpus.reencode/2` only. It must not
+  shell out to ffmpeg, launch a Port, or spawn a process for codec or container work.
+  Other containers (WebM/MP4) stay out of scope. ffmpeg appears only in fixture-import
+  tooling, never in runtime or test code under test.
+- For packet/PCM APIs it must not parse Ogg; callers that already hold raw packets use
+  `encode`/`decode`/`transcode`. File-like Ogg blobs use `reencode/2`.
 - Codec state (encoder/decoder) lives in Rustler resources owned by Elixir processes. Resource cleanup on owner death and explicit close must be idempotent and leak-free.
 - PCM is passed as a binary of 32-bit little-endian IEEE-754 `f32` samples, interleaved for stereo. Opus packets are passed as raw binaries. Keep this one stable binary contract everywhere.
 - Longer encodes/decodes run on Rustler dirty I/O schedulers so a large frame never blocks a normal BEAM scheduler.
