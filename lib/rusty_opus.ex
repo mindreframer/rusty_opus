@@ -59,6 +59,69 @@ defmodule RustyOpus do
     end
   end
 
+  @doc """
+  Encodes a single PCM frame into an Opus packet with a short-lived encoder.
+
+  `pcm` must contain exactly one frame (`frame_size * channels` samples). `opts` are
+  passed to `RustyOpus.Encoder.new/4` (see `RustyOpus.Settings` and `RustyOpus.Quality`).
+  """
+  @spec encode_pcm(binary(), pos_integer(), 1 | 2, keyword()) ::
+          {:ok, binary()} | {:error, RustyOpus.Error.t()}
+  def encode_pcm(pcm, rate, channels, opts \\ [])
+      when is_binary(pcm) and is_integer(rate) and channels in [1, 2] and is_list(opts) do
+    with {:ok, encoder} <- RustyOpus.Encoder.new(rate, channels, application(opts), opts) do
+      frame_size = div(RustyOpus.PCM.sample_count(pcm), channels)
+      result = RustyOpus.Encoder.encode(encoder, pcm, frame_size)
+      RustyOpus.Encoder.close(encoder)
+      result
+    end
+  end
+
+  @doc """
+  Decodes a single Opus packet into PCM with a short-lived decoder.
+
+  `frame_size` is the number of samples per channel in the decoded frame.
+  """
+  @spec decode_packet(binary(), pos_integer(), 1 | 2, pos_integer()) ::
+          {:ok, binary()} | {:error, RustyOpus.Error.t()}
+  def decode_packet(packet, rate, channels, frame_size)
+      when is_binary(packet) and is_integer(rate) and channels in [1, 2] and
+             is_integer(frame_size) do
+    with {:ok, decoder} <- RustyOpus.Decoder.new(rate, channels) do
+      result = RustyOpus.Decoder.decode(decoder, packet, frame_size)
+      RustyOpus.Decoder.close(decoder)
+      result
+    end
+  end
+
+  @doc """
+  Changes the encoding quality of one Opus `packet`: decodes it to PCM and re-encodes
+  it at a new quality, returning the re-encoded packet.
+
+  `quality` is a preset (`:low`/`:medium`/`:high`) or a `RustyOpus.Settings` struct.
+  Options:
+
+    * `:target_bitrate` — overrides the preset bitrate
+    * `:frame_size` — decoded frame size in samples per channel (default `div(rate, 50)`)
+    * any other `RustyOpus.Settings` key — overrides the preset
+
+  ## Example
+
+      {:ok, high} = RustyOpus.change_quality(packet, 16_000, 1, :high)
+      {:ok, low} = RustyOpus.change_quality(packet, 16_000, 1, :low, target_bitrate: 12_000)
+  """
+  @spec change_quality(binary(), pos_integer(), 1 | 2, RustyOpus.Quality.quality(), keyword()) ::
+          {:ok, binary()} | {:error, RustyOpus.Error.t()}
+  def change_quality(packet, rate, channels, quality, opts \\ [])
+      when is_binary(packet) and is_integer(rate) and channels in [1, 2] and is_list(opts) do
+    frame_size = Keyword.get(opts, :frame_size, div(rate, 50))
+
+    with {:ok, settings} <- RustyOpus.Quality.to_settings(quality, opts),
+         {:ok, pcm} <- decode_packet(packet, rate, channels, frame_size) do
+      encode_pcm(pcm, rate, channels, RustyOpus.Settings.to_native(settings) |> native_to_opts())
+    end
+  end
+
   @doc false
   def rustle(reason, message) do
     %RustyOpus.Error{reason: normalize_reason(reason), message: message}
@@ -79,4 +142,10 @@ defmodule RustyOpus do
 
   defp normalize_reason(reason) when is_binary(reason), do: Map.get(@reasons, reason, reason)
   defp normalize_reason(reason), do: reason
+
+  defp application(opts), do: Keyword.get(opts, :application, :audio)
+
+  defp native_to_opts(map) do
+    for {k, v} <- map, not is_nil(v), do: {k, v}
+  end
 end

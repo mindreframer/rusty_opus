@@ -2,13 +2,13 @@
 
 ## Progress
 
-- [ ] Phase 4.1: Add `RustyOpus` facade helpers `encode_pcm/3|4` and `decode_packet/3`.
-- [ ] Phase 4.2: Add PCM interleave/deinterleave and sample-count helpers.
-- [ ] Phase 4.3: Add quality presets `:low`/`:medium`/`:high` and a `:target_bitrate` override.
-- [ ] Phase 4.4: Add `RustyOpus.change_quality/4` (decode → re-encode at new quality).
-- [ ] Phase 4.5: Add `scripts/import_fixtures.sh` and compact `test/fixtures/` plus a golden Opus fixture.
-- [ ] Phase 4.6: Add quality-change tests: size ordering, low-bitrate shrink, lossy tolerance.
-- [ ] Phase 4.7: Pass the epic gate, verify every Epic 4 criterion, and prepare the focused commit.
+- [x] Phase 4.1: Add `RustyOpus` facade helpers `encode_pcm/3|4` and `decode_packet/3`.
+- [x] Phase 4.2: Add PCM interleave/deinterleave and sample-count helpers.
+- [x] Phase 4.3: Add quality presets `:low`/`:medium`/`:high` and a `:target_bitrate` override.
+- [x] Phase 4.4: Add `RustyOpus.change_quality/4` (decode → re-encode at new quality).
+- [x] Phase 4.5: Add `scripts/import_fixtures.sh` and compact `test/fixtures/` plus a golden Opus fixture.
+- [x] Phase 4.6: Add quality-change tests: size ordering, low-bitrate shrink, lossy tolerance.
+- [x] Phase 4.7: Pass the epic gate, verify every Epic 4 criterion, and prepare the focused commit.
 
 ## Implementation Steps
 
@@ -37,10 +37,10 @@
 
 ## Quality Gate
 
-- [ ] Presets and `:target_bitrate` are documented and monotonic in produced size.
-- [ ] `change_quality/4` produces observably smaller output at lower quality.
-- [ ] Fixtures are stable and reproducible offline from the DB.
-- [ ] `bin/qa_check.sh` is green; commit follows the rule.
+- [x] Presets and `:target_bitrate` are documented and monotonic in produced size.
+- [x] `change_quality/4` produces observably smaller output at lower quality.
+- [x] Fixtures are stable and reproducible offline from the DB.
+- [x] `bin/qa_check.sh` is green; commit follows the rule.
 
 ## Commit Rule
 
