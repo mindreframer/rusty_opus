@@ -1,5 +1,6 @@
 //! Opus decoder resources and NIFs.
 
+use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::{
     atomic::{AtomicBool, AtomicUsize, Ordering},
     Mutex,
@@ -64,10 +65,21 @@ pub fn decoder_decode<'a>(
         .map_err(|_| tuple("poisoned", "decoder mutex is poisoned"))?;
 
     let mut output = vec![0f32; inner.channels * frame_size];
-    let written = inner
-        .decoder
-        .decode(packet.as_slice(), frame_size, &mut output)
-        .map_err(|m| tuple("decode_failed", m))?;
+    // opus-rs can panic on hostile packets (e.g. corrupt SILK parameters); contain
+    // the panic at the NIF boundary and poison the decoder afterwards.
+    let written = if let Ok(result) = catch_unwind(AssertUnwindSafe(|| {
+        inner
+            .decoder
+            .decode(packet.as_slice(), frame_size, &mut output)
+    })) {
+        result.map_err(|m| tuple("decode_failed", m))?
+    } else {
+        resource.closed.store(true, Ordering::SeqCst);
+        return Err(tuple(
+            "codec_panicked",
+            "opus-rs decoder panicked; decoder is now unusable",
+        ));
+    };
 
     let total = written.saturating_mul(inner.channels).min(output.len());
     let mut binary = NewBinary::new(env, total * 4);

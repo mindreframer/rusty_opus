@@ -137,7 +137,8 @@ defmodule RustyOpus do
     "invalid_application" => :invalid_application,
     "invalid_rate" => :invalid_rate,
     "encode_failed" => :encode_failed,
-    "decode_failed" => :decode_failed
+    "decode_failed" => :decode_failed,
+    "codec_panicked" => :codec_panicked
   }
 
   defp normalize_reason(reason) when is_binary(reason), do: Map.get(@reasons, reason, reason)

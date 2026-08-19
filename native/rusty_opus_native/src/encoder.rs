@@ -1,5 +1,6 @@
 //! Opus encoder resources and NIFs.
 
+use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::{
     atomic::{AtomicBool, AtomicUsize, Ordering},
     Mutex,
@@ -139,10 +140,20 @@ pub fn encoder_encode<'a>(
     }
 
     let mut output = vec![0u8; 4096];
-    let written = inner
-        .encoder
-        .encode(&samples, frame_size, &mut output)
-        .map_err(|m| tuple("encode_failed", m))?;
+    // opus-rs can panic on malformed internal state; contain it so the panic never
+    // unwinds across the NIF boundary. After a panic the encoder is marked closed
+    // because its internal state may be inconsistent.
+    let written = if let Ok(result) = catch_unwind(AssertUnwindSafe(|| {
+        inner.encoder.encode(&samples, frame_size, &mut output)
+    })) {
+        result.map_err(|m| tuple("encode_failed", m))?
+    } else {
+        resource.closed.store(true, Ordering::SeqCst);
+        return Err(tuple(
+            "codec_panicked",
+            "opus-rs encoder panicked; encoder is now unusable",
+        ));
+    };
 
     let mut binary = NewBinary::new(env, written);
     binary.as_mut_slice().copy_from_slice(&output[..written]);

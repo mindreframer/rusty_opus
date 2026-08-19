@@ -28,11 +28,12 @@ defmodule RustyOpus.TestHelpers.ChildBEAM do
   """
   @spec run_mix(binary()) :: {:ok, binary()} | {:error, {integer(), binary()}}
   def run_mix(expr) when is_binary(expr) do
-    project_root = Path.expand("../../../", __DIR__)
+    project_root = Path.expand("../..", __DIR__)
 
     {out, status} =
       System.cmd("mix", ["run", "--no-compile", "-e", expr],
         cd: project_root,
+        env: [{"MIX_ENV", "test"}, {"RUSTY_OPUS_BUILD", "1"}],
         stderr_to_stdout: true
       )
 
