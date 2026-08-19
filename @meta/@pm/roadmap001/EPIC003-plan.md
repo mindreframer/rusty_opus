@@ -2,13 +2,13 @@
 
 ## Progress
 
-- [ ] Phase 3.1: Register the decoder resource and implement `decoder_new/2` with validation.
-- [ ] Phase 3.2: Implement `decoder_decode/3` with capacity-safe PCM output and dirty scheduling.
-- [ ] Phase 3.3: Handle ToC-only lost/DTX packets via packet-loss concealment (PLC).
-- [ ] Phase 3.4: Add `RustyOpus.Decoder` with `new/2` and `decode/3`, plus stable error mapping.
-- [ ] Phase 3.5: Add decoder round-trip, golden-packet, channel-mismatch, PLC, and cleanup tests.
-- [ ] Phase 3.6: Map every Opus error to a stable tagged error; prove idempotent close and owner-death cleanup.
-- [ ] Phase 3.7: Pass the epic gate, verify every Epic 3 criterion, and prepare the focused commit.
+- [x] Phase 3.1: Register the decoder resource and implement `decoder_new/2` with validation.
+- [x] Phase 3.2: Implement `decoder_decode/3` with capacity-safe PCM output and dirty scheduling.
+- [x] Phase 3.3: Handle ToC-only lost/DTX packets via packet-loss concealment (PLC).
+- [x] Phase 3.4: Add `RustyOpus.Decoder` with `new/2` and `decode/3`, plus stable error mapping.
+- [x] Phase 3.5: Add decoder round-trip, golden-packet, channel-mismatch, PLC, and cleanup tests.
+- [x] Phase 3.6: Map every Opus error to a stable tagged error; prove idempotent close and owner-death cleanup.
+- [x] Phase 3.7: Pass the epic gate, verify every Epic 3 criterion, and prepare the focused commit.
 
 ## Implementation Steps
 
@@ -36,11 +36,11 @@
 
 ## Quality Gate
 
-- [ ] `decode/3` returns the PCM-binary contract and dirty schedules large frames.
-- [ ] Encoder→decoder round-trip passes within lossy tolerance.
-- [ ] PLC and channel-mismatch behavior are correct and stable.
-- [ ] Close is idempotent; owner death frees the resource.
-- [ ] `bin/qa_check.sh` is green; commit follows the rule.
+- [x] `decode/3` returns the PCM-binary contract and dirty schedules large frames.
+- [x] Encoder→decoder round-trip passes within energy tolerance (RMS/peak, delay-tolerant).
+- [x] PLC and channel-mismatch behavior are correct and stable.
+- [x] Close is idempotent; owner death frees the resource.
+- [x] `bin/qa_check.sh` is green; commit follows the rule.
 
 ## Commit Rule
 

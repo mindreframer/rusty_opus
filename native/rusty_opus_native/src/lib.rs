@@ -16,8 +16,10 @@ mod atoms {
     }
 }
 
+mod decoder;
 mod encoder;
 
+use decoder::DecoderResource;
 use encoder::{EncoderResource, NativeSettings};
 
 #[rustler::nif]
@@ -87,8 +89,36 @@ fn encoder_count() -> usize {
     encoder::encoder_count()
 }
 
+#[rustler::nif]
+fn decoder_new(
+    rate: i64,
+    channels: usize,
+) -> Result<rustler::ResourceArc<DecoderResource>, (String, String)> {
+    decoder::decoder_new(rate, channels)
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+fn decoder_decode<'a>(
+    env: rustler::Env<'a>,
+    resource: rustler::ResourceArc<DecoderResource>,
+    packet: rustler::Binary<'a>,
+    frame_size: usize,
+) -> Result<rustler::Binary<'a>, (String, String)> {
+    decoder::decoder_decode(env, resource, packet, frame_size)
+}
+
+#[rustler::nif]
+fn decoder_close(resource: rustler::ResourceArc<DecoderResource>) -> Result<(), (String, String)> {
+    decoder::decoder_close(resource)
+}
+
+#[rustler::nif]
+fn decoder_count() -> usize {
+    decoder::decoder_count()
+}
+
 fn load(env: Env<'_>, _load_info: Term<'_>) -> bool {
-    env.register::<EncoderResource>().is_ok()
+    env.register::<EncoderResource>().is_ok() && env.register::<DecoderResource>().is_ok()
 }
 
 rustler::init!("Elixir.RustyOpus.Native", load = load);

@@ -34,4 +34,9 @@ defmodule RustyOpus.Native do
   def encoder_set(_resource, _settings), do: :erlang.nif_error(:nif_not_loaded)
   def encoder_close(_resource), do: :erlang.nif_error(:nif_not_loaded)
   def encoder_count, do: :erlang.nif_error(:nif_not_loaded)
+
+  def decoder_new(_rate, _channels), do: :erlang.nif_error(:nif_not_loaded)
+  def decoder_decode(_resource, _packet, _frame_size), do: :erlang.nif_error(:nif_not_loaded)
+  def decoder_close(_resource), do: :erlang.nif_error(:nif_not_loaded)
+  def decoder_count, do: :erlang.nif_error(:nif_not_loaded)
 end

@@ -35,10 +35,18 @@ defmodule RustyOpus.TestHelpers.PCM do
 
     samples =
       for i <- 0..(total - 1)//1 do
-        Math.sin(2.0 * :math.pi() * frequency * i / rate)
+        sine_sample(rate, i, frequency)
       end
 
     from_samples(samples)
+  end
+
+  @doc """
+  A single sine sample at `i` (absolute sample index) for the given rate/frequency.
+  """
+  @spec sine_sample(non_neg_integer(), non_neg_integer(), float()) :: float()
+  def sine_sample(rate, i, frequency) do
+    Math.sin(2.0 * :math.pi() * frequency * i / rate)
   end
 end
 
