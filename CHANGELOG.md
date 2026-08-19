@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0 — Reencode Ogg Opus blobs at a numeric bitrate
+
+- `RustyOpus.reencode/2` takes an Ogg Opus blob and `bitrate:` (bits/s) and returns a
+  smaller Ogg Opus blob. Pure Rust via `ruopus`. No ffmpeg, no C libopus, no quality atoms.
+- Hard-tested against real MemoMoo `audio_versions` speech fixtures.
+- Packet/PCM APIs from 0.2.0 are unchanged.
+
 ## 0.2.0 — Whole-stream encode, decode, and transcode
 
 - `Encoder.encode_many/2` and `Decoder.decode_many/2` encode or decode a whole buffer

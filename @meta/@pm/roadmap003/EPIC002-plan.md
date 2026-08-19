@@ -2,9 +2,9 @@
 
 ## Progress
 
-- [ ] Phase 2.1: README + moduledoc lead with `reencode/2` and numeric bitrates.
-- [ ] Phase 2.2: Changelog + fixture note; bump Mix/Cargo/lockfiles to `0.3.0`.
-- [ ] Phase 2.3: `bin/qa_check.sh`, mark ROADMAP003 Complete, focused commit.
+- [x] Phase 2.1: README + moduledoc lead with `reencode/2` and numeric bitrates.
+- [x] Phase 2.2: Changelog + fixture note; bump Mix/Cargo/lockfiles to `0.3.0`.
+- [x] Phase 2.3: `bin/qa_check.sh`, mark ROADMAP003 Complete, focused commit.
 
 ## Implementation Steps
 
@@ -17,16 +17,16 @@
 
 ## Test Isolation Checklist
 
-- [ ] Docs examples match real function names/arities.
-- [ ] No new shared temp paths.
+- [x] Docs examples match real function names/arities.
+- [x] No new shared temp paths.
 
 ## Quality Gate
 
-- [ ] Version is `0.3.0` everywhere declared.
-- [ ] README leads with blob reencode.
-- [ ] ROADMAP003 Complete.
-- [ ] `bin/qa_check.sh` green.
-- [ ] Commit rule followed; no Hex publish.
+- [x] Version is `0.3.0` everywhere declared.
+- [x] README leads with blob reencode.
+- [x] ROADMAP003 Complete.
+- [x] `bin/qa_check.sh` green.
+- [x] Commit rule followed; no Hex publish.
 
 ## Commit Rule
 

@@ -6,54 +6,44 @@
 [![Precompiled NIFs](https://github.com/mindreframer/rusty_opus/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/mindreframer/rusty_opus/actions/workflows/release.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/mindreframer/rusty_opus/blob/main/LICENSE)
 
-Pure-Rust [Opus](https://opus-codec.org/) (RFC 6716) for Elixir, wrapped from the
-[`opus-rs`](https://github.com/restsend/opus-rs) codec through Rustler. No C `libopus`,
-no external process, no Ogg container handling — just PCM ⇄ Opus packets in one BEAM
+Pure-Rust [Opus](https://opus-codec.org/) for Elixir. No C `libopus`, no ffmpeg, no
+external process — shrink real Ogg Opus blobs (or work with raw packets/PCM) in one BEAM
 process.
 
-**The headline feature: change the encoding quality of audio.** Decode a packet to PCM
-and re-encode it at a different bitrate or a `:low`/`:medium`/`:high` preset to trade
-size against fidelity.
+**Headline:** take an Ogg Opus file/blob and make it smaller with a numeric bitrate:
+
+```elixir
+{:ok, smaller} = RustyOpus.reencode(ogg_blob, bitrate: 20_000)
+```
+
+That is the whole call. Useful ladder values match MemoMoo-style profiles:
+`8_000`, `12_000`, `16_000`, `20_000`, `24_000`, `32_000`.
 
 ## Quick start
 
 ```elixir
-{:ok, packets} = RustyOpus.encode(pcm, 16_000, 1, quality: :medium)
+# Ogg Opus blob → smaller Ogg Opus blob (default path for files)
+{:ok, smaller} = RustyOpus.reencode(ogg_blob, bitrate: 20_000)
+
+# Raw packets / PCM (no container)
+{:ok, packets} = RustyOpus.encode(pcm, 16_000, 1, bitrate: 24_000)
 {:ok, pcm}     = RustyOpus.decode(packets, 16_000, 1)
-{:ok, smaller} = RustyOpus.transcode(packets, 16_000, 1, :low)
-```
-
-Frame size defaults to 20 ms. A short last encode frame is padded with silence.
-
-Single-frame helpers (`encode_pcm/4`, `decode_packet/4`, `change_quality/5`) and the
-`Encoder` / `Decoder` modules remain for per-frame control:
-
-```elixir
-{:ok, encoder} = RustyOpus.Encoder.new(16_000, 1, :voip, bitrate: 24_000)
-{:ok, packet} = RustyOpus.Encoder.encode(encoder, frame_pcm, 320)
-:ok = RustyOpus.Encoder.close(encoder)
-
-{:ok, smaller} = RustyOpus.change_quality(packet, 16_000, 1, :low)
 ```
 
 ## Data contract
 
-- **PCM** — binary of little-endian IEEE-754 `f32` samples, interleaved for stereo.
-- **Opus packets** — raw binaries.
+- **Ogg Opus** — RFC 7845 binaries (`audio/ogg` / `.ogg`) for `reencode/2`.
+- **PCM** — little-endian IEEE-754 `f32`, interleaved for stereo.
+- **Opus packets** — raw binaries (no container).
 
-RustyOpus targets the raw Opus CODEC. It does not parse, demux, or mux containers
-(Ogg/WebM); it never launches an external process. See the [codec guide](docs/codec.md).
+No WebM/MP4. Never launches an external process. See the [codec guide](docs/codec.md).
 
 ## Features
 
-- `RustyOpus.encode/4`, `decode/4`, `transcode/5` — whole-stream encode, decode, and
-  quality change in one call (default path)
-- `RustyOpus.Encoder` / `Decoder` — per-frame control, bitrate/complexity/FEC, `set/2`
-- Single-frame helpers: `encode_pcm/4`, `decode_packet/4`, `change_quality/5`
-- `RustyOpus.Quality` presets and `:target_bitrate` overrides
-- `RustyOpus.PCM` — sample-count, interleave/deinterleave helpers
-- Dirty-scheduled codec work that never blocks normal BEAM schedulers
-- Panic containment: hostile packets become tagged errors, not crashes
+- `RustyOpus.reencode/2` — Ogg Opus blob → lower bitrate Ogg Opus blob (pure Rust `ruopus`)
+- `RustyOpus.encode/4`, `decode/4`, `transcode/5` — whole-stream raw packet/PCM path
+- `RustyOpus.Encoder` / `Decoder` — per-frame control
+- Dirty-scheduled codec work; panic containment at the NIF boundary
 - Checksum-verified precompiled NIFs with source-build fallback
 
 ## Supported OS
@@ -68,32 +58,28 @@ Other targets (e.g. Intel macOS) build from source with `RUSTY_OPUS_BUILD=1` and
 
 ## Technology
 
-| Elixir module | Native crate | Rust package |
+| Elixir module | Native crate | Rust packages |
 | --- | --- | --- |
-| `RustyOpus` | `native/rusty_opus_native` | `opus-rs 0.1.29` |
+| `RustyOpus` | `native/rusty_opus_native` | `opus-rs 0.1.29`, `ruopus 0.1.2` |
 
 ## Development
-
-The authoritative gate:
 
 ```sh
 bin/qa_check.sh
 ```
 
-Rust 1.89.0 is pinned. Fixtures come from real speech imported from the audio database
-via `scripts/import_fixtures.sh` (committed fixtures are stable; tests need neither the
-DB nor ffmpeg).
+Committed fixtures include real MemoMoo `audio_versions` Ogg Opus speech blobs for
+`reencode/2` tests. Tests need neither the live DB nor ffmpeg.
 
 ## Release
 
 1. Bump the version in `mix.exs` and `native/rusty_opus_native/Cargo.toml`.
 2. Run `bin/qa_check.sh` and push the green version commit.
-3. Tag `v0.2.0`; the release workflow builds and smoke-tests every precompiled NIF,
-   verifies the artifact set and digests, generates the checksum manifest, and runs
-   no-Rust consumer tests.
+3. Tag `v0.3.0`; the release workflow builds and smoke-tests every precompiled NIF.
 4. Publish the Hex package and GitHub release (maintainer step).
 
 ## License
 
-RustyOpus is licensed under the [Apache License 2.0](LICENSE). The bundled `opus-rs`
-codec is BSD-3-Clause (see [NOTICE](NOTICE) and [provenance](docs/provenance.md)).
+RustyOpus is licensed under the [Apache License 2.0](LICENSE). Bundled codecs:
+`opus-rs` (BSD-3-Clause) and `ruopus` (MIT) — see [NOTICE](NOTICE) and
+[provenance](docs/provenance.md).

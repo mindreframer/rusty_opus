@@ -1,18 +1,29 @@
 # Codec API and data contract
 
-RustyOpus wraps the pure-Rust `opus-rs` codec (RFC 6716) through Rustler. It operates on
-**raw Opus packets** and **raw PCM**; it does not parse Ogg/WebM containers.
+RustyOpus wraps pure-Rust Opus through Rustler.
+
+- **Ogg Opus blobs** — `RustyOpus.reencode/2` (via `ruopus`) demuxes, re-encodes at a
+  numeric bitrate, and remuxes. This is the path for real `.ogg` / `audio/ogg` files.
+- **Raw Opus packets** and **PCM** — `encode` / `decode` / `transcode` and the
+  `Encoder` / `Decoder` modules (via `opus-rs`). No container on this path.
+- WebM/MP4 and ffmpeg are out of scope.
 
 ## Data contract
 
+- **Ogg Opus** is an RFC 7845 binary (starts with `OggS`).
 - **PCM** is a binary of 32-bit little-endian IEEE-754 `f32` samples, interleaved for
   stereo. Sample count is `byte_size(pcm) / 4`.
 - **Opus packets** are raw binaries, passed verbatim.
 
-This binary contract avoids compressed Erlang-term marshalling for bulk audio data and is
-the same everywhere in the library.
+## Ogg reencode (file-like)
 
-## Supported configuration
+```elixir
+{:ok, smaller} = RustyOpus.reencode(ogg_blob, bitrate: 20_000)
+```
+
+`:bitrate` is required (bits/s). Typical MemoMoo ladder: `8_000` … `32_000`.
+
+## Supported configuration (packet/PCM path)
 
 | Parameter | Values |
 | --- | --- |
