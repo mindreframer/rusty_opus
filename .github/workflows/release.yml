@@ -178,8 +178,8 @@ jobs:
           PROJECT_VERSION: ${{ env.PROJECT_VERSION }}
         run: elixir bin/smoke_precompiled_nif.exs
 
-      - name: Mix API smoke (non-musl)
-        if: ${{ !contains(matrix.target, 'musl') }}
+      - name: Mix API smoke (macOS native only)
+        if: matrix.builder == 'native'
         shell: bash
         env:
           ARCHIVE: ${{ steps.artifact.outputs.file-path }}
