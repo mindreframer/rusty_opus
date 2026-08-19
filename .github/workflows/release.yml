@@ -11,6 +11,10 @@ permissions:
   attestations: write
   artifact-metadata: write
 
+env:
+  NIF_VERSION: "2.15"
+  RUST_TOOLCHAIN: "1.89.0"
+
 jobs:
   source-qa:
     runs-on: macos-15
@@ -30,56 +34,157 @@ jobs:
   native:
     needs: source-qa
     name: NIF 2.15 / ${{ matrix.target }}
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         include:
           - target: aarch64-apple-darwin
-            os: macos-15
-          - target: x86_64-unknown-linux-gnu
-            os: ubuntu-24.04
+            runner: macos-15
+            builder: native
+          - target: x86_64-apple-darwin
+            runner: macos-15-intel
+            builder: native
           - target: aarch64-unknown-linux-gnu
-            os: ubuntu-24.04-arm
+            runner: ubuntu-24.04-arm
+            builder: container
+            image: "rust:1.89.0-bullseye"
+          - target: aarch64-unknown-linux-musl
+            runner: ubuntu-24.04-arm
+            builder: container
+            image: "rust:1.89.0-alpine3.22"
+          - target: x86_64-unknown-linux-gnu
+            runner: ubuntu-24.04
+            builder: container
+            image: "rust:1.89.0-bullseye"
+          - target: x86_64-unknown-linux-musl
+            runner: ubuntu-24.04
+            builder: container
+            image: "rust:1.89.0-alpine3.22"
     steps:
       - uses: actions/checkout@v6
-      - uses: erlef/setup-beam@v1
-        with:
-          otp-version: "27.3"
-          elixir-version: "1.20.1"
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: "1.89.0"
-          target: ${{ matrix.target }}
-      - run: mix deps.get
-      - name: Host source smoke
-        run: RUSTY_OPUS_BUILD=1 mix test test/rusty_opus/encoder_test.exs test/rusty_opus/decoder_test.exs
-      - name: Build release NIF
-        id: build
-        env:
-          TARGET: ${{ matrix.target }}
-          RUSTLER_NIF_VERSION: "2.15"
+
+      - name: Resolve project version
+        shell: bash
         run: |
           VERSION=$(sed -n 's/.*@version "\([^"]*\)".*/\1/p' mix.exs | head -1)
           test -n "$VERSION"
+          echo "PROJECT_VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - if: ${{ !contains(matrix.target, 'musl') }}
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: "27.3"
+          elixir-version: "1.20.1"
+
+      - name: Cache Cargo registry and target
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            native/rusty_opus_native/target
+          key: precompiled-${{ matrix.target }}-nif${{ env.NIF_VERSION }}-${{ hashFiles('native/rusty_opus_native/Cargo.lock', 'native/rusty_opus_native/Cargo.toml', 'native/rusty_opus_native/src/**/*.rs') }}
+
+      - name: Install pinned Rust toolchain
+        if: matrix.builder == 'native'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.89.0"
+          targets: ${{ matrix.target }}
+
+      - name: Build native artifact
+        if: matrix.builder == 'native'
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+          RUSTLER_NIF_VERSION: ${{ env.NIF_VERSION }}
+        run: |
           cargo +1.89.0 build --release --locked --target "$TARGET" \
             --manifest-path native/rusty_opus_native/Cargo.toml
-          source="native/rusty_opus_native/target/$TARGET/release/librusty_opus_native.so"
-          if [[ "$TARGET" == *-apple-darwin ]]; then
-            source="native/rusty_opus_native/target/$TARGET/release/librusty_opus_native.dylib"
-          fi
-          artifact="librusty_opus_native-v${VERSION}-nif-2.15-$TARGET.so"
-          archive="$artifact.tar.gz"
-          test -f "$source"
-          cp "$source" "$artifact"
-          tar -czf "$archive" "$artifact"
-          echo "file-path=$GITHUB_WORKSPACE/$archive" >> "$GITHUB_OUTPUT"
-          echo "file-name=$archive" >> "$GITHUB_OUTPUT"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-      - name: Smoke the exact archived NIF
+
+      - name: Package native artifact
+        if: matrix.builder == 'native'
+        id: native
+        shell: bash
+        run: bin/package_precompiled_nif.sh "$PROJECT_VERSION" "$NIF_VERSION" "${{ matrix.target }}"
+
+      - name: Build Linux artifact in matching container
+        if: matrix.builder == 'container'
+        shell: bash
         env:
-          ARCHIVE: ${{ steps.build.outputs.file-path }}
+          IMAGE: ${{ matrix.image }}
+          TARGET: ${{ matrix.target }}
+          RUSTLER_NIF_VERSION: ${{ env.NIF_VERSION }}
         run: |
+          mkdir -p "$HOME/.cargo/registry" "$HOME/.cargo/git"
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/work" \
+            -v "$HOME/.cargo/registry:/usr/local/cargo/registry" \
+            -v "$HOME/.cargo/git:/usr/local/cargo/git" \
+            -w /work/native/rusty_opus_native \
+            -e TARGET="$TARGET" \
+            -e RUSTLER_NIF_VERSION="$RUSTLER_NIF_VERSION" \
+            -e CARGO_INCREMENTAL=0 \
+            -e CARGO_TARGET_DIR="/work/native/rusty_opus_native/target/$TARGET" \
+            "$IMAGE" sh -c '
+              set -eu
+              if test -f /etc/alpine-release; then
+                apk add --no-cache build-base linux-headers
+              else
+                apt-get update
+                apt-get install -y --no-install-recommends build-essential pkg-config
+                rm -rf /var/lib/apt/lists/*
+              fi
+              rustc -vV | grep -q "^host: $TARGET$"
+              cargo build --locked --release --target "$TARGET"
+            '
+          sudo chown -R "$(id -u):$(id -g)" "native/rusty_opus_native/target/$TARGET"
+
+      - name: Package Linux artifact
+        if: matrix.builder == 'container'
+        id: linux
+        shell: bash
+        env:
+          CARGO_TARGET_DIR: native/rusty_opus_native/target/${{ matrix.target }}
+        run: bin/package_precompiled_nif.sh "$PROJECT_VERSION" "$NIF_VERSION" "${{ matrix.target }}"
+
+      - name: Select artifact outputs
+        id: artifact
+        shell: bash
+        env:
+          NATIVE_NAME: ${{ steps.native.outputs.file-name }}
+          NATIVE_PATH: ${{ steps.native.outputs.file-path }}
+          LINUX_NAME: ${{ steps.linux.outputs.file-name }}
+          LINUX_PATH: ${{ steps.linux.outputs.file-path }}
+        run: |
+          name="${NATIVE_NAME:-$LINUX_NAME}"
+          path="${NATIVE_PATH:-$LINUX_PATH}"
+          test -n "$name" && test -f "$path"
+          mkdir -p raw-smoke
+          tar -xzf "$path" -C raw-smoke
+          test "$(find raw-smoke -type f | wc -l | tr -d ' ')" = 1
+          echo "file-name=$name" >> "$GITHUB_OUTPUT"
+          echo "file-path=$path" >> "$GITHUB_OUTPUT"
+          echo "nif-path=$(find "$PWD/raw-smoke" -type f -print -quit)" >> "$GITHUB_OUTPUT"
+
+      - name: Raw smoke native/glibc artifact
+        if: ${{ !contains(matrix.target, 'musl') }}
+        shell: bash
+        env:
+          NIF_PATH: ${{ steps.artifact.outputs.nif-path }}
+          PROJECT_VERSION: ${{ env.PROJECT_VERSION }}
+        run: elixir bin/smoke_precompiled_nif.exs
+
+      - name: Mix API smoke (non-musl)
+        if: ${{ !contains(matrix.target, 'musl') }}
+        shell: bash
+        env:
+          ARCHIVE: ${{ steps.artifact.outputs.file-path }}
+        run: |
+          mix deps.get
+          RUSTY_OPUS_BUILD=1 mix compile
           rm -rf /tmp/rusty_opus-artifact
           mkdir -p /tmp/rusty_opus-artifact priv/native
           tar -xzf "$ARCHIVE" -C /tmp/rusty_opus-artifact
@@ -95,19 +200,35 @@ jobs:
             true = byte_size(decoded) == 320 * 4
             IO.puts("artifact-smoke-ok")
           '
+
+      - name: Raw smoke musl artifact in Alpine Elixir
+        if: contains(matrix.target, 'musl')
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/work:ro" \
+            -e PROJECT_VERSION="$PROJECT_VERSION" \
+            -e NIF_PATH="/work/$(find raw-smoke -type f -print -quit)" \
+            hexpm/elixir:1.20.1-erlang-27.3.4.13-alpine-3.22.5 \
+            sh -c 'apk add --no-cache libgcc >/dev/null && elixir /work/bin/smoke_precompiled_nif.exs'
+
       - name: Attest artifact
         uses: actions/attest@v4
         with:
-          subject-path: ${{ steps.build.outputs.file-path }}
+          subject-path: ${{ steps.artifact.outputs.file-path }}
+
       - uses: actions/upload-artifact@v7
         with:
-          name: ${{ steps.build.outputs.file-name }}
-          path: ${{ steps.build.outputs.file-path }}
+          name: ${{ steps.artifact.outputs.file-name }}
+          path: ${{ steps.artifact.outputs.file-path }}
+          if-no-files-found: error
+
       - name: Publish exact-tag artifact
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ steps.build.outputs.file-path }}
+          files: ${{ steps.artifact.outputs.file-path }}
 
   published-checksums-and-consumer:
     if: startsWith(github.ref, 'refs/tags/')
@@ -136,7 +257,10 @@ jobs:
           cat > expected <<EOF
           librusty_opus_native-v${VERSION}-nif-2.15-aarch64-apple-darwin.so.tar.gz
           librusty_opus_native-v${VERSION}-nif-2.15-aarch64-unknown-linux-gnu.so.tar.gz
+          librusty_opus_native-v${VERSION}-nif-2.15-aarch64-unknown-linux-musl.so.tar.gz
+          librusty_opus_native-v${VERSION}-nif-2.15-x86_64-apple-darwin.so.tar.gz
           librusty_opus_native-v${VERSION}-nif-2.15-x86_64-unknown-linux-gnu.so.tar.gz
+          librusty_opus_native-v${VERSION}-nif-2.15-x86_64-unknown-linux-musl.so.tar.gz
           EOF
           (cd published && ls *.tar.gz | sort) > actual
           diff -u expected actual

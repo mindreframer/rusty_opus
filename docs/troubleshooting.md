@@ -3,7 +3,8 @@
 ## The NIF does not load
 
 - Confirm a precompiled artifact exists for your target (`aarch64-apple-darwin`,
-  `x86_64-apple-darwin`, `aarch64-unknown-linux-gnu`, `x86_64-unknown-linux-gnu`).
+  `x86_64-apple-darwin`, `aarch64-unknown-linux-gnu`, `aarch64-unknown-linux-musl`,
+  `x86_64-unknown-linux-gnu`, `x86_64-unknown-linux-musl`).
 - Or build from source with `RUSTY_OPUS_BUILD=1 mix compile` and Rust 1.89.0 installed.
 - A `:bad_lib`/`Function not found` error means the loaded `.so` does not match the
   compiled module — recompile after code changes (`mix clean && mix compile`).
@@ -29,8 +30,7 @@
   compare by energy (RMS) rather than per-sample, and buffer a few frames before use.
 - **Tiny packets for a quiet clip** — silent frames encode to a few bytes at every
   bitrate; use a loud region to compare bitrate effects.
-- **Windows/musl targets** — not yet published for 0.1.0; use a source build or a
-  supported target.
+- **Windows targets** — not yet published; use a source build or a supported target.
 
 ## QA
 

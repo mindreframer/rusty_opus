@@ -51,10 +51,13 @@ No WebM/MP4. Never launches an external process. See the [codec guide](docs/code
 Precompiled NIFs are published for:
 
 - Apple Silicon macOS (`aarch64-apple-darwin`)
-- ARM64 Linux with glibc (`aarch64-unknown-linux-gnu`)
-- x86-64 Linux with glibc (`x86_64-unknown-linux-gnu`)
+- Intel macOS (`x86_64-apple-darwin`)
+- ARM64 Linux glibc (`aarch64-unknown-linux-gnu`)
+- ARM64 Linux musl / Alpine (`aarch64-unknown-linux-musl`)
+- x86-64 Linux glibc (`x86_64-unknown-linux-gnu`)
+- x86-64 Linux musl / Alpine (`x86_64-unknown-linux-musl`)
 
-Other targets (e.g. Intel macOS) build from source with `RUSTY_OPUS_BUILD=1` and Rust 1.89.0.
+Other targets can build from source with `RUSTY_OPUS_BUILD=1` and Rust 1.89.0.
 
 ## Technology
 
@@ -75,7 +78,7 @@ Committed fixtures include real MemoMoo `audio_versions` Ogg Opus speech blobs f
 
 1. Bump the version in `mix.exs` and `native/rusty_opus_native/Cargo.toml`.
 2. Run `bin/qa_check.sh` and push the green version commit.
-3. Tag `v0.3.1`; the release workflow builds and smoke-tests every precompiled NIF.
+3. Tag `v0.3.2`; the release workflow builds and smoke-tests every precompiled NIF.
 4. Publish the Hex package and GitHub release (maintainer step).
 
 ## License

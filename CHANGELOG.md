@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.2 — Broader precompiled NIF matrix
+
+- Precompiled NIFs for six targets: Apple Silicon + Intel macOS, Linux glibc and
+  musl (Alpine) on both aarch64 and x86_64.
+- Release builds Linux artifacts in matching Docker images; musl artifacts are
+  smoke-tested under Alpine Elixir.
+- Windows remains deferred.
+
 ## 0.3.1 — Faster Ogg reencode on Apple Silicon (ADR003)
 
 - `reencode/2` uses pinned `opus-rs` (NEON on aarch64) plus thin in-crate Ogg Opus
