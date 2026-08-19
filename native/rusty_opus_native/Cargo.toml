@@ -1,0 +1,25 @@
+[package]
+name = "rusty_opus_native"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+publish = false
+
+[lib]
+name = "rusty_opus_native"
+crate-type = ["cdylib"]
+
+[dependencies]
+opus-rs = "=0.1.29"
+rustler = "=0.36.2"
+
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "deny", priority = -1 }
+nursery = { level = "deny", priority = -1 }
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "allow"
