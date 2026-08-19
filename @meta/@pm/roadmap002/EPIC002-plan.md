@@ -2,12 +2,12 @@
 
 ## Progress
 
-- [ ] Phase 2.1: Add `RustyOpus.encode/4` (open encoder, `encode_many`, close).
-- [ ] Phase 2.2: Add `RustyOpus.decode/4` (open decoder, `decode_many`, close).
-- [ ] Phase 2.3: Add `RustyOpus.transcode/5` using the same quality resolution as `change_quality/5`.
-- [ ] Phase 2.4: Equivalence, ordering, error, and lifecycle tests.
-- [ ] Phase 2.5: README quick start and `RustyOpus` moduledoc lead with encode/decode/transcode.
-- [ ] Phase 2.6: Pass the epic gate, verify every Epic 2 criterion, and prepare the focused commit.
+- [x] Phase 2.1: Add `RustyOpus.encode/4` (open encoder, `encode_many`, close).
+- [x] Phase 2.2: Add `RustyOpus.decode/4` (open decoder, `decode_many`, close).
+- [x] Phase 2.3: Add `RustyOpus.transcode/5` using the same quality resolution as `change_quality/5`.
+- [x] Phase 2.4: Equivalence, ordering, error, and lifecycle tests.
+- [x] Phase 2.5: README quick start and `RustyOpus` moduledoc lead with encode/decode/transcode.
+- [x] Phase 2.6: Pass the epic gate, verify every Epic 2 criterion, and prepare the focused commit.
 
 ## Implementation Steps
 
@@ -28,19 +28,19 @@
 
 ## Test Isolation Checklist
 
-- [ ] Facade tests do not share encoder/decoder handles across cases.
-- [ ] Counter checks capture a baseline before the call.
-- [ ] Lossy PCM compares use `RustyOpus.TestHelpers`, not exact equality.
-- [ ] 0.1.0 one-shot tests keep passing.
+- [x] Facade tests do not share encoder/decoder handles across cases.
+- [x] Counter checks capture a baseline before the call.
+- [x] Lossy PCM compares use `RustyOpus.TestHelpers`, not exact equality.
+- [x] 0.1.0 one-shot tests keep passing.
 
 ## Quality Gate
 
-- [ ] `encode/4`, `decode/4`, and `transcode/5` exist and are documented as the default path.
-- [ ] Single-packet transcode matches `change_quality/5`.
-- [ ] README examples do not require manual chunking.
-- [ ] 0.1.0 functions unchanged.
-- [ ] `bin/qa_check.sh` is green.
-- [ ] Commit title and body follow the commit rule.
+- [x] `encode/4`, `decode/4`, and `transcode/5` exist and are documented as the default path.
+- [x] Single-packet transcode matches `change_quality/5`.
+- [x] README examples do not require manual chunking.
+- [x] 0.1.0 functions unchanged.
+- [x] `bin/qa_check.sh` is green.
+- [x] Commit title and body follow the commit rule.
 
 ## Commit Rule
 

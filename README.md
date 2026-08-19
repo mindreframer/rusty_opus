@@ -18,17 +18,22 @@ size against fidelity.
 ## Quick start
 
 ```elixir
+{:ok, packets} = RustyOpus.encode(pcm, 16_000, 1, quality: :medium)
+{:ok, pcm}     = RustyOpus.decode(packets, 16_000, 1)
+{:ok, smaller} = RustyOpus.transcode(packets, 16_000, 1, :low)
+```
+
+Frame size defaults to 20 ms. A short last encode frame is padded with silence.
+
+Single-frame helpers (`encode_pcm/4`, `decode_packet/4`, `change_quality/5`) and the
+`Encoder` / `Decoder` modules remain for per-frame control:
+
+```elixir
 {:ok, encoder} = RustyOpus.Encoder.new(16_000, 1, :voip, bitrate: 24_000)
-{:ok, packet} = RustyOpus.Encoder.encode(encoder, pcm, 320)
+{:ok, packet} = RustyOpus.Encoder.encode(encoder, frame_pcm, 320)
 :ok = RustyOpus.Encoder.close(encoder)
 
-{:ok, decoder} = RustyOpus.Decoder.new(16_000, 1)
-{:ok, pcm} = RustyOpus.Decoder.decode(decoder, packet, 320)
-:ok = RustyOpus.Decoder.close(decoder)
-
-# Change the encoding quality of a packet:
 {:ok, smaller} = RustyOpus.change_quality(packet, 16_000, 1, :low)
-{:ok, larger}  = RustyOpus.change_quality(packet, 16_000, 1, :high, target_bitrate: 96_000)
 ```
 
 ## Data contract
@@ -41,10 +46,10 @@ RustyOpus targets the raw Opus CODEC. It does not parse, demux, or mux container
 
 ## Features
 
-- `RustyOpus.Encoder` — bitrate, complexity, CBR/VBR, in-band FEC, packet-loss controls,
-  runtime `set/2`
-- `RustyOpus.Decoder` — packet-loss concealment for lost/DTX frames
-- `RustyOpus.change_quality/4,5` — decode → re-encode at a new quality
+- `RustyOpus.encode/4`, `decode/4`, `transcode/5` — whole-stream encode, decode, and
+  quality change in one call (default path)
+- `RustyOpus.Encoder` / `Decoder` — per-frame control, bitrate/complexity/FEC, `set/2`
+- Single-frame helpers: `encode_pcm/4`, `decode_packet/4`, `change_quality/5`
 - `RustyOpus.Quality` presets and `:target_bitrate` overrides
 - `RustyOpus.PCM` — sample-count, interleave/deinterleave helpers
 - Dirty-scheduled codec work that never blocks normal BEAM schedulers

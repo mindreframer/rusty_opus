@@ -50,11 +50,11 @@ Chunking and the encode/decode loop move into Rust so a whole stream is one NIF 
 
 One-shot helpers that open a codec, run the bulk path, and close it.
 
-- [ ] `RustyOpus.encode(pcm, rate, channels, opts \\ [])` → `{:ok, [packet]}`. `opts` are encoder settings plus optional `:frame_size` and `:quality`.
-- [ ] `RustyOpus.decode(packets, rate, channels, opts \\ [])` → `{:ok, pcm}`. Optional `:frame_size`.
-- [ ] `RustyOpus.transcode(packets, rate, channels, quality, opts \\ [])` → `{:ok, [packet]}`. Same quality resolution as `change_quality/5`. One input packet produces one output packet, in order.
-- [ ] Tests: `transcode` on a single packet equals `change_quality/5`; multi-packet count and order; `:low` total size ≤ `:high`; bad rate/quality return tagged errors.
-- [ ] README quick start and `RustyOpus` moduledoc lead with these three calls. Keep `encode_pcm/4`, `decode_packet/4`, and `change_quality/5` as single-frame helpers.
+- [x] `RustyOpus.encode(pcm, rate, channels, opts \\ [])` → `{:ok, [packet]}`. `opts` are encoder settings plus optional `:frame_size` and `:quality`.
+- [x] `RustyOpus.decode(packets, rate, channels, opts \\ [])` → `{:ok, pcm}`. Optional `:frame_size`.
+- [x] `RustyOpus.transcode(packets, rate, channels, quality, opts \\ [])` → `{:ok, [packet]}`. Same quality resolution as `change_quality/5`. One input packet produces one output packet, in order.
+- [x] Tests: `transcode` on a single packet equals `change_quality/5`; multi-packet count and order; `:low` total size ≤ `:high`; bad rate/quality return tagged errors.
+- [x] README quick start and `RustyOpus` moduledoc lead with these three calls. Keep `encode_pcm/4`, `decode_packet/4`, and `change_quality/5` as single-frame helpers.
 
 **Done when:** converting a whole stream to a lower quality is one function call, documented as the default path.
 
