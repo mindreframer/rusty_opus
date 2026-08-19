@@ -2,13 +2,13 @@
 
 ## Progress
 
-- [ ] Phase 6.1: Write README with badges, quality-change quickstart, PCM/Opus contract, supported targets, release section.
-- [ ] Phase 6.2: Add `docs/installation.md`, `docs/codec.md`, `docs/quality.md`, `docs/troubleshooting.md`, `docs/provenance.md`.
-- [ ] Phase 6.3: Add Apache-2.0 `LICENSE`, `NOTICE` (BSD-3-Clause opus-rs), `CHANGELOG.md`, `SECURITY.md`.
-- [ ] Phase 6.4: Configure `mix.exs` `description`, `source_url`, `docs`, `package` files, maintainers, licenses, links.
-- [ ] Phase 6.5: Add `scripts/package_check.sh` and make the unpacked-package checks pass; add `checksum-*.exs` scaffold.
-- [ ] Phase 6.6: Add light telemetry/native counters for encode/decode durations and error counts.
-- [ ] Phase 6.7: Pass the epic gate, verify every Epic 6 criterion, and prepare the focused commit.
+- [x] Phase 6.1: Write README with badges, quality-change quickstart, PCM/Opus contract, supported targets, release section.
+- [x] Phase 6.2: Add `docs/installation.md`, `docs/codec.md`, `docs/quality.md`, `docs/troubleshooting.md`, `docs/provenance.md`.
+- [x] Phase 6.3: Add Apache-2.0 `LICENSE`, `NOTICE` (BSD-3-Clause opus-rs), `CHANGELOG.md`, `SECURITY.md`.
+- [x] Phase 6.4: Configure `mix.exs` `description`, `source_url`, `docs`, `package` files, maintainers, licenses, links.
+- [x] Phase 6.5: Add `scripts/package_check.sh` and make the unpacked-package checks pass; add `checksum-*.exs` scaffold.
+- [x] Phase 6.6: Add light telemetry/native counters for encode/decode durations and error counts.
+- [x] Phase 6.7: Pass the epic gate, verify every Epic 6 criterion, and prepare the focused commit.
 
 ## Implementation Steps
 
@@ -32,16 +32,16 @@
 
 ## Test Isolation Checklist
 
-- [ ] Package checks build/unpack only in a clean temporary directory.
-- [ ] Docs/doctests are deterministic and need no network or DB.
-- [ ] Provenance strings are asserted exactly.
+- [x] Package checks build/unpack only in a clean temporary directory.
+- [x] Docs/doctests are deterministic and need no network or DB.
+- [x] Provenance strings are asserted exactly.
 
 ## Quality Gate
 
-- [ ] README/docs match the implemented API; `mix docs` builds.
-- [ ] Legal material records `opus-rs` BSD-3-Clause and pinned revision.
-- [ ] Unpacked package has docs, `checksum-*.exs`, and no build/absolute-path artifacts.
-- [ ] `bin/qa_check.sh` is green; commit follows the rule.
+- [x] README/docs match the implemented API; `mix docs` builds.
+- [x] Legal material records `opus-rs` BSD-3-Clause and pinned revision.
+- [x] Unpacked package has docs, `checksum-*.exs`, and no build/absolute-path artifacts.
+- [x] `bin/qa_check.sh` is green; commit follows the rule.
 
 ## Commit Rule
 

@@ -60,8 +60,9 @@ defmodule RustyOpus.MixProject do
 
   defp package do
     [
+      maintainers: ["Roman Heinrich"],
       licenses: ["Apache-2.0"],
-      links: %{"Source" => @source_url},
+      links: %{"Source" => @source_url, "Changelog" => "#{@source_url}/blob/main/CHANGELOG.md"},
       exclude_patterns: ["/target/"],
       files:
         ~w(lib native/rusty_opus_native/src native/rusty_opus_native/Cargo.toml
