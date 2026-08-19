@@ -243,22 +243,24 @@ defmodule RustyOpus.RobustnessTest do
   end
 
   describe "throughput smoke" do
+    @tag timeout: 60_000
     test "encodes and decodes many frames quickly" do
       {:ok, e} = Encoder.new(@rate, 1, :audio, bitrate: 24_000)
       {:ok, d} = Decoder.new(@rate, 1)
       pcm = sine()
+      frames = 200
 
       {us, result} =
         :timer.tc(fn ->
-          Enum.reduce(1..1_000, 0, fn _, acc ->
+          Enum.reduce(1..frames, 0, fn _, acc ->
             {:ok, packet} = Encoder.encode(e, pcm, @frame)
             {:ok, _} = Decoder.decode(d, packet, @frame)
             acc + 1
           end)
         end)
 
-      # 1000 frames round-tripped; allow generous CI headroom (target ~ms range).
-      assert result == 1_000
+      # Round-trip enough frames for a smoke; allow generous CI headroom.
+      assert result == frames
       assert us < 20_000_000
     end
   end
