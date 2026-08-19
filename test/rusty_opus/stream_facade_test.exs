@@ -1,10 +1,26 @@
 defmodule RustyOpus.StreamFacadeTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias RustyOpus.Error
   alias RustyOpus.TestHelpers.{LossyCompare, PCM}
 
   @rate 16_000
+
+  defp wait_until(fun, timeout \\ 2_000) do
+    deadline = System.monotonic_time(:millisecond) + timeout
+
+    cond do
+      fun.() ->
+        :ok
+
+      System.monotonic_time(:millisecond) >= deadline ->
+        raise "condition not met within #{timeout}ms"
+
+      true ->
+        Process.sleep(10)
+        wait_until(fun, deadline - System.monotonic_time(:millisecond))
+    end
+  end
 
   describe "encode/4 and decode/4" do
     test "encode of one exact frame equals [packet] from encode_pcm/4" do
@@ -99,9 +115,10 @@ defmodule RustyOpus.StreamFacadeTest do
       end)
 
       :erlang.garbage_collect()
-      Process.sleep(50)
 
-      assert RustyOpus.Native.encoder_count() + RustyOpus.Native.decoder_count() <= before + 2
+      wait_until(fn ->
+        RustyOpus.Native.encoder_count() + RustyOpus.Native.decoder_count() <= before + 2
+      end)
     end
   end
 
