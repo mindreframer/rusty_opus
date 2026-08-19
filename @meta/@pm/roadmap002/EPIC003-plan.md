@@ -2,9 +2,9 @@
 
 ## Progress
 
-- [ ] Phase 3.1: Bump Mix, Cargo, and lockfiles to `0.2.0`.
-- [ ] Phase 3.2: Changelog and README match the shipped API; 0.1.0 call sites noted as unchanged.
-- [ ] Phase 3.3: Run `bin/qa_check.sh`, mark ROADMAP002 complete, and prepare the focused commit.
+- [x] Phase 3.1: Bump Mix, Cargo, and lockfiles to `0.2.0`.
+- [x] Phase 3.2: Changelog and README match the shipped API; 0.1.0 call sites noted as unchanged.
+- [x] Phase 3.3: Run `bin/qa_check.sh`, mark ROADMAP002 complete, and prepare the focused commit.
 
 ## Implementation Steps
 
@@ -19,16 +19,16 @@
 
 ## Test Isolation Checklist
 
-- [ ] No new shared temp paths or codec handles.
-- [ ] Changelog/README examples match actual function names and arities.
+- [x] No new shared temp paths or codec handles.
+- [x] Changelog/README examples match actual function names and arities.
 
 ## Quality Gate
 
-- [ ] Version is `0.2.0` everywhere it is declared.
-- [ ] Changelog and README match the shipped API.
-- [ ] ROADMAP002 is marked complete.
-- [ ] `bin/qa_check.sh` is green.
-- [ ] Commit title and body follow the commit rule. No publish step.
+- [x] Version is `0.2.0` everywhere it is declared.
+- [x] Changelog and README match the shipped API.
+- [x] ROADMAP002 is marked complete.
+- [x] `bin/qa_check.sh` is green.
+- [x] Commit title and body follow the commit rule. No publish step.
 
 ## Commit Rule
 

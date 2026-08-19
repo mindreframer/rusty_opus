@@ -1,6 +1,12 @@
 # ROADMAP002 — Encode and Transcode a Whole Stream
 
-**Status:** Not started
+**Status:** Complete
+
+Shipped `0.2.0` with bulk `encode_many`/`decode_many`, whole-stream
+`RustyOpus.encode/4` / `decode/4` / `transcode/5`, default 20 ms frames with last-frame
+silence padding, and unchanged 0.1.0 APIs. Precompiled artifacts and Hex publish remain
+the maintainer's step.
+
 - **Scope:** Let callers encode a full PCM buffer and transcode a full packet list without a per-frame loop. Version `0.2.0`.
 - **Why this is short:** Roadmap 001 already shipped a working per-frame codec. This only adds the missing whole-stream path.
 
@@ -62,10 +68,10 @@ One-shot helpers that open a codec, run the bulk path, and close it.
 
 ## Epic 3 — `0.2.0` and close
 
-- [ ] Bump Mix, Cargo, and lockfiles to `0.2.0`.
-- [ ] Changelog and README match the shipped API. Note that 0.1.0 call sites are unchanged.
-- [ ] `bin/qa_check.sh` green.
-- [ ] Mark this roadmap complete.
+- [x] Bump Mix, Cargo, and lockfiles to `0.2.0`.
+- [x] Changelog and README match the shipped API. Note that 0.1.0 call sites are unchanged.
+- [x] `bin/qa_check.sh` green.
+- [x] Mark this roadmap complete.
 
 **Done when:** `0.2.0` is documented and QA is green. Precompiled artifacts and Hex publish stay with the maintainer.
 

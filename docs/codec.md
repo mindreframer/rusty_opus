@@ -63,10 +63,18 @@ Every failure is a `%RustyOpus.Error{}` with a stable `:reason` and a `:message`
 Panics inside the codec are contained at the NIF boundary and poison the affected
 resource; they never crash the caller process.
 
-## Facade
+## Whole-stream facade
 
-For one-shot use, `RustyOpus.encode_pcm/4` and `RustyOpus.decode_packet/4` create,
-use, and close a short-lived codec:
+The default path encodes, decodes, or transcodes a whole buffer in one call (20 ms
+frames by default; a short last encode frame is padded with silence):
+
+```elixir
+{:ok, packets} = RustyOpus.encode(pcm, 16_000, 1, quality: :medium)
+{:ok, pcm}     = RustyOpus.decode(packets, 16_000, 1)
+{:ok, smaller} = RustyOpus.transcode(packets, 16_000, 1, :low)
+```
+
+Single-frame helpers still create, use, and close a short-lived codec:
 
 ```elixir
 {:ok, packet} = RustyOpus.encode_pcm(pcm, 16_000, 1, bitrate: 32_000)

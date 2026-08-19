@@ -88,7 +88,7 @@ DB nor ffmpeg).
 
 1. Bump the version in `mix.exs` and `native/rusty_opus_native/Cargo.toml`.
 2. Run `bin/qa_check.sh` and push the green version commit.
-3. Tag `v0.1.0`; the release workflow builds and smoke-tests every precompiled NIF,
+3. Tag `v0.2.0`; the release workflow builds and smoke-tests every precompiled NIF,
    verifies the artifact set and digests, generates the checksum manifest, and runs
    no-Rust consumer tests.
 4. Publish the Hex package and GitHub release (maintainer step).

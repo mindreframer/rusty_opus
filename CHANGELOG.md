@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.0 — Whole-stream encode, decode, and transcode
+
+- `Encoder.encode_many/2` and `Decoder.decode_many/2` encode or decode a whole buffer
+  or packet list in one DirtyCpu NIF call.
+- `RustyOpus.encode/4`, `decode/4`, and `transcode/5` open a codec, run the bulk path,
+  and close it — the default path for converting a stream.
+- Default frame size is 20 ms (`div(rate, 50)`). A short last encode frame is padded
+  with silence, never truncated.
+- 0.1.0 call sites are unchanged: per-frame `encode/3`/`decode/3` and single-frame
+  helpers `encode_pcm/4`, `decode_packet/4`, and `change_quality/5` still work.
+
 ## 0.1.0 — Initial release
 
 - Pure-Rust Opus (RFC 6716) codec for Elixir via Rustler, wrapped from `opus-rs 0.1.29`.
