@@ -1,7 +1,7 @@
 defmodule RustyOpus.MixProject do
   use Mix.Project
 
-  @version "0.3.2"
+  @version "0.3.3"
   @source_url "https://github.com/mindreframer/rusty_opus"
 
   def project do

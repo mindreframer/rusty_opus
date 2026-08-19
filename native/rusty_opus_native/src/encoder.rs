@@ -44,7 +44,7 @@ fn tuple(reason: &str, message: &str) -> (String, String) {
     (reason.to_string(), message.to_string())
 }
 
-fn apply_settings(encoder: &mut OpusEncoder, settings: &NativeSettings) -> Result<(), String> {
+pub fn apply_settings(encoder: &mut OpusEncoder, settings: &NativeSettings) -> Result<(), String> {
     // Settings are validated in Elixir (rate <= 48000, bitrate >= 0, complexity
     // 0..10, packet_loss 0..100), so i64 -> i32 cannot truncate meaningful values;
     // the checked conversion still keeps the boundary honest.

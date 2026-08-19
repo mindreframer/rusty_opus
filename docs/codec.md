@@ -24,6 +24,18 @@ RustyOpus wraps pure-Rust Opus through Rustler.
 
 `:bitrate` is required (bits/s). Typical ladder: `8_000` … `32_000`.
 
+Speech-oriented defaults (FFmpeg analogues):
+
+| Option | Default | FFmpeg |
+| --- | --- | --- |
+| `:application` | `:voip` | `-application voip` |
+| `:complexity` | `10` | `-compression_level 10` |
+| `:cbr` | `false` (VBR) | `-vbr on` |
+| `:frame_duration_ms` | `20` | `-frame_duration` (FFmpeg often uses `60`) |
+
+`frame_duration_ms` may be `10` or `20`. `40` and `60` are not supported by
+`opus-rs` at 48 kHz on this path and return `:invalid_settings`.
+
 ## Supported configuration (packet/PCM path)
 
 | Parameter | Values |

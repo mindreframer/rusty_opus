@@ -2,7 +2,8 @@ defmodule RustyOpus do
   @moduledoc """
   Pure-Rust [Opus](https://opus-codec.org/) (RFC 6716) for Elixir.
 
-  Shrink an Ogg Opus blob to a numeric bitrate in one call (no ffmpeg, no C libopus):
+  Shrink an Ogg Opus blob to a numeric bitrate in one call (no ffmpeg, no C libopus).
+  Defaults are speech-oriented (VoIP, complexity 10, VBR, 20 ms):
 
       {:ok, smaller} = RustyOpus.reencode(ogg_blob, bitrate: 20_000)
 
@@ -62,37 +63,113 @@ defmodule RustyOpus do
   @doc """
   Reencodes an Ogg Opus blob at a target bitrate (bits/s).
 
-  This is the simple API for shrinking real `.ogg` / `audio/ogg` files in memory:
-  demux → decode → encode at `bitrate` → remux, all pure Rust (`opus-rs` + thin Ogg).
+  Demux → decode → encode → remux, all pure Rust (`opus-rs` + thin Ogg).
+
+  Defaults match the MemoMoo FFmpeg speech ladder as closely as `opus-rs`
+  allows: VoIP, complexity 10, VBR, 20 ms frames.
 
   ## Options
 
     * `:bitrate` (required) — positive integer, bits per second (e.g. `20_000`)
+    * `:application` — `:voip` (default), `:audio`, or `:restricted_low_delay`
+    * `:complexity` — `0..10` (default `10`, FFmpeg `-compression_level`)
+    * `:cbr` — `true` for CBR; default `false` (VBR, FFmpeg `-vbr on`)
+    * `:frame_duration_ms` — `10` or `20` (default `20`). `40`/`60` are rejected:
+      `opus-rs` cannot encode those durations at 48 kHz on this path.
 
   ## Example
 
       {:ok, smaller} = RustyOpus.reencode(ogg_blob, bitrate: 20_000)
+
+      {:ok, smaller} =
+        RustyOpus.reencode(ogg_blob,
+          bitrate: 20_000,
+          application: :voip,
+          complexity: 10,
+          cbr: false,
+          frame_duration_ms: 20
+        )
   """
   @spec reencode(binary(), keyword()) :: {:ok, binary()} | {:error, RustyOpus.Error.t()}
   def reencode(blob, opts \\ [])
 
   def reencode(blob, opts) when is_binary(blob) and is_list(opts) do
-    case Keyword.fetch(opts, :bitrate) do
-      {:ok, bitrate} when is_integer(bitrate) and bitrate > 0 ->
-        case RustyOpus.Native.ogg_reencode(blob, bitrate) do
-          {:ok, out} -> {:ok, out}
-          {:error, {reason, message}} -> {:error, rustle(reason, message)}
-        end
-
-      {:ok, _} ->
-        {:error, rustle(:invalid_settings, "bitrate must be a positive integer")}
-
-      :error ->
-        {:error, rustle(:invalid_settings, "bitrate is required")}
+    with {:ok, settings} <- reencode_settings(opts) do
+      case RustyOpus.Native.ogg_reencode(blob, settings) do
+        {:ok, out} -> {:ok, out}
+        {:error, {reason, message}} -> {:error, rustle(reason, message)}
+      end
     end
   end
 
   def reencode(_, _), do: {:error, rustle(:invalid_input, "Ogg Opus blob must be a binary")}
+
+  defp reencode_settings(opts) do
+    with {:ok, bitrate} <- fetch_bitrate(opts),
+         {:ok, application} <- fetch_application(opts),
+         {:ok, complexity} <- fetch_complexity(opts),
+         {:ok, cbr} <- fetch_cbr(opts),
+         {:ok, frame_duration_ms} <- fetch_frame_duration_ms(opts) do
+      {:ok,
+       %{
+         bitrate: bitrate,
+         application: Atom.to_string(application),
+         complexity: complexity,
+         cbr: cbr,
+         frame_duration_ms: frame_duration_ms
+       }}
+    end
+  end
+
+  defp fetch_bitrate(opts) do
+    case Keyword.fetch(opts, :bitrate) do
+      {:ok, bitrate} when is_integer(bitrate) and bitrate > 0 -> {:ok, bitrate}
+      {:ok, _} -> {:error, rustle(:invalid_settings, "bitrate must be a positive integer")}
+      :error -> {:error, rustle(:invalid_settings, "bitrate is required")}
+    end
+  end
+
+  defp fetch_application(opts) do
+    case Keyword.get(opts, :application, :voip) do
+      app when app in [:voip, :audio, :restricted_low_delay] ->
+        {:ok, app}
+
+      _ ->
+        {:error,
+         rustle(:invalid_settings, "application must be :voip, :audio, or :restricted_low_delay")}
+    end
+  end
+
+  defp fetch_complexity(opts) do
+    case Keyword.get(opts, :complexity, 10) do
+      c when is_integer(c) and c in 0..10 -> {:ok, c}
+      _ -> {:error, rustle(:invalid_settings, "complexity must be an integer between 0 and 10")}
+    end
+  end
+
+  defp fetch_cbr(opts) do
+    case Keyword.get(opts, :cbr, false) do
+      cbr when is_boolean(cbr) -> {:ok, cbr}
+      _ -> {:error, rustle(:invalid_settings, "cbr must be a boolean")}
+    end
+  end
+
+  defp fetch_frame_duration_ms(opts) do
+    case Keyword.get(opts, :frame_duration_ms, 20) do
+      ms when ms in [10, 20] ->
+        {:ok, ms}
+
+      ms when ms in [40, 60] ->
+        {:error,
+         rustle(
+           :invalid_settings,
+           "frame_duration_ms 40 and 60 are not supported by opus-rs at 48 kHz; use 10 or 20"
+         )}
+
+      _ ->
+        {:error, rustle(:invalid_settings, "frame_duration_ms must be 10 or 20")}
+    end
+  end
 
   @doc """
   Encodes a whole PCM buffer into a list of Opus packets.

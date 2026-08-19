@@ -23,6 +23,7 @@ mod ogg;
 
 use decoder::DecoderResource;
 use encoder::{EncoderResource, NativeSettings};
+use ogg::ReencodeSettings;
 
 #[rustler::nif]
 fn smoke() -> (Atom, &'static str) {
@@ -143,9 +144,9 @@ fn decoder_count() -> usize {
 fn ogg_reencode<'a>(
     env: rustler::Env<'a>,
     blob: rustler::Binary<'a>,
-    bitrate: u32,
+    settings: ReencodeSettings,
 ) -> Result<rustler::Binary<'a>, (String, String)> {
-    ogg::ogg_reencode(env, blob, bitrate)
+    ogg::ogg_reencode(env, blob, settings)
 }
 
 fn load(env: Env<'_>, _load_info: Term<'_>) -> bool {

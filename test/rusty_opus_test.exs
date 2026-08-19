@@ -5,7 +5,7 @@ defmodule RustyOpusTest do
 
   test "the native boundary is live and reports a version" do
     assert {:ok, version} = RustyOpus.native_smoke()
-    assert version == "0.3.2"
+    assert version == Mix.Project.config()[:version]
   end
 
   test "a deterministic native error translates without crashing" do

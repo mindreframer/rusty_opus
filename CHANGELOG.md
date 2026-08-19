@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.3 — Speech-oriented reencode defaults
+
+- `reencode/2` defaults match the FFmpeg speech ladder as closely as `opus-rs`
+  allows: `:application :voip`, `:complexity 10`, VBR (`cbr: false`),
+  `:frame_duration_ms 20`.
+- New options: `:application`, `:complexity`, `:cbr`, `:frame_duration_ms`.
+- `40`/`60` ms frames are rejected with `:invalid_settings` (`opus-rs` limitation;
+  FFmpeg can use 60 ms).
+- Ogg mux packs many complete Opus packets per page (≤255 lacing values), matching
+  common libopus/ffmpeg layout and removing one-packet-per-page size bloat.
+
 ## 0.3.2 — Broader precompiled NIF matrix
 
 - Precompiled NIFs for six targets: Apple Silicon + Intel macOS, Linux glibc and

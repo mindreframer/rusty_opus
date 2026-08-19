@@ -10,7 +10,8 @@ Pure-Rust [Opus](https://opus-codec.org/) for Elixir. No C `libopus`, no ffmpeg,
 external process — shrink real Ogg Opus blobs (or work with raw packets/PCM) in one BEAM
 process.
 
-**Headline:** take an Ogg Opus file/blob and make it smaller with a numeric bitrate:
+**Headline:** take an Ogg Opus file/blob and make it smaller with a numeric bitrate
+(defaults: VoIP, complexity 10, VBR, 20 ms — FFmpeg speech ladder analogues):
 
 ```elixir
 {:ok, smaller} = RustyOpus.reencode(ogg_blob, bitrate: 20_000)
@@ -78,7 +79,7 @@ Tests need neither a live database nor ffmpeg.
 
 1. Bump the version in `mix.exs` and `native/rusty_opus_native/Cargo.toml`.
 2. Run `bin/qa_check.sh` and push the green version commit.
-3. Tag `v0.3.2`; the release workflow builds and smoke-tests every precompiled NIF.
+3. Tag `v0.3.3`; the release workflow builds and smoke-tests every precompiled NIF.
 4. Publish the Hex package and GitHub release (maintainer step).
 
 ## License

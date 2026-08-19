@@ -4,7 +4,9 @@ use std::collections::VecDeque;
 use std::panic::{catch_unwind, AssertUnwindSafe};
 
 use opus_rs::{Application, OpusDecoder, OpusEncoder};
-use rustler::{Binary, Env, NewBinary};
+use rustler::{Binary, Env, NewBinary, NifMap};
+
+use crate::encoder::NativeSettings;
 
 const CAPTURE: &[u8; 4] = b"OggS";
 const HEADER_LEN: usize = 27;
@@ -12,32 +14,37 @@ const NO_GRANULE: u64 = u64::MAX;
 const MAX_PACKET_LEN: usize = 16 * 1024 * 1024;
 /// Max Opus packet duration at 48 kHz (120 ms).
 const MAX_FRAME_48K: usize = 5760;
-/// 20 ms @ 48 kHz.
-const FRAME_48K: usize = 960;
 /// Typical libopus / opus-rs encoder lookahead at 48 kHz (samples).
 const PRE_SKIP: u16 = 312;
 const SERIAL: u32 = 0x4f_70_75_73; // "Opus"
+
+/// Speech-oriented reencode knobs (`FFmpeg`/`libopus` analogues).
+#[derive(Debug, NifMap)]
+pub struct ReencodeSettings {
+    pub bitrate: i64,
+    pub application: String,
+    pub complexity: i64,
+    pub cbr: bool,
+    pub frame_duration_ms: i64,
+}
 
 fn tuple(reason: &str, message: &str) -> (String, String) {
     (reason.to_string(), message.to_string())
 }
 
-/// Demux an Ogg Opus blob, re-encode PCM at `bitrate` bits/s, remux Ogg Opus.
+/// Demux an Ogg Opus blob, re-encode PCM with speech-oriented settings, remux.
 #[allow(clippy::needless_pass_by_value)]
 pub fn ogg_reencode<'a>(
     env: Env<'a>,
     blob: Binary<'a>,
-    bitrate: u32,
+    settings: ReencodeSettings,
 ) -> Result<Binary<'a>, (String, String)> {
-    if bitrate == 0 {
-        return Err(tuple("invalid_settings", "bitrate must be greater than 0"));
-    }
     if blob.is_empty() {
         return Err(tuple("invalid_input", "Ogg Opus blob must not be empty"));
     }
 
     let bytes = blob.as_slice().to_vec();
-    let result = catch_unwind(AssertUnwindSafe(|| reencode_inner(&bytes, bitrate)));
+    let result = catch_unwind(AssertUnwindSafe(|| reencode_inner(&bytes, &settings)));
     match result {
         Ok(Ok(out)) => {
             let mut binary = NewBinary::new(env, out.len());
@@ -52,9 +59,39 @@ pub fn ogg_reencode<'a>(
     }
 }
 
-fn reencode_inner(bytes: &[u8], bitrate: u32) -> Result<Vec<u8>, (String, String)> {
+fn reencode_inner(bytes: &[u8], settings: &ReencodeSettings) -> Result<Vec<u8>, (String, String)> {
     let (pcm, channels) = decode_ogg_opus(bytes)?;
-    encode_ogg_opus(&pcm, channels, bitrate)
+    encode_ogg_opus(&pcm, channels, settings)
+}
+
+fn parse_application(name: &str) -> Result<Application, (String, String)> {
+    match name {
+        "voip" => Ok(Application::Voip),
+        "audio" => Ok(Application::Audio),
+        "restricted_low_delay" => Ok(Application::RestrictedLowDelay),
+        _ => Err(tuple(
+            "invalid_settings",
+            "application must be voip, audio, or restricted_low_delay",
+        )),
+    }
+}
+
+/// Samples/channel at 48 kHz for a supported Opus frame duration.
+///
+/// `opus-rs` rejects 40 ms / 60 ms on this path (Hybrid/CELT or frame-rate check).
+fn frame_samples_48k(duration_ms: i64) -> Result<usize, (String, String)> {
+    match duration_ms {
+        10 => Ok(480),
+        20 => Ok(960),
+        40 | 60 => Err(tuple(
+            "invalid_settings",
+            "frame_duration_ms 40 and 60 are not supported by opus-rs at 48 kHz; use 10 or 20",
+        )),
+        _ => Err(tuple(
+            "invalid_settings",
+            "frame_duration_ms must be 10 or 20 (opus-rs limitation vs ffmpeg 60)",
+        )),
+    }
 }
 
 // ── Ogg CRC (RFC 3533) ─────────────────────────────────────────────────────
@@ -161,23 +198,49 @@ fn parse_page(data: &[u8]) -> Result<(Page<'_>, usize), (String, String)> {
     ))
 }
 
-fn write_page(serial: u32, seq: u32, granule: u64, header_type: u8, payload: &[u8]) -> Vec<u8> {
+fn write_page(
+    serial: u32,
+    seq: u32,
+    granule: u64,
+    header_type: u8,
+    payload: &[u8],
+) -> Result<Vec<u8>, (String, String)> {
+    // A single OpusHead/OpusTags/audio packet always fits in ≤255 lacing values.
+    write_page_packets(serial, seq, granule, header_type, &[payload])
+}
+
+/// Write one Ogg page containing one or more complete packets (no continued pages).
+fn write_page_packets(
+    serial: u32,
+    seq: u32,
+    granule: u64,
+    header_type: u8,
+    packets: &[&[u8]],
+) -> Result<Vec<u8>, (String, String)> {
     let mut segments = Vec::new();
-    let mut remaining = payload.len();
-    loop {
+    let mut body = Vec::new();
+    for pkt in packets {
+        body.extend_from_slice(pkt);
+        let mut remaining = pkt.len();
         if remaining == 0 {
             segments.push(0);
-            break;
+            continue;
         }
-        if remaining < 255 {
-            #[allow(clippy::cast_possible_truncation)]
-            segments.push(remaining as u8);
-            break;
+        while remaining >= 255 {
+            segments.push(255);
+            remaining -= 255;
         }
-        segments.push(255);
-        remaining -= 255;
+        #[allow(clippy::cast_possible_truncation)]
+        segments.push(remaining as u8);
     }
-    let mut page = Vec::with_capacity(HEADER_LEN + segments.len() + payload.len());
+    if segments.len() > 255 {
+        return Err(tuple(
+            "encode_failed",
+            "Ogg page segment table exceeds 255 entries",
+        ));
+    }
+
+    let mut page = Vec::with_capacity(HEADER_LEN + segments.len() + body.len());
     page.extend_from_slice(CAPTURE);
     page.push(0);
     page.push(header_type);
@@ -188,10 +251,18 @@ fn write_page(serial: u32, seq: u32, granule: u64, header_type: u8, payload: &[u
     #[allow(clippy::cast_possible_truncation)]
     page.push(segments.len() as u8);
     page.extend_from_slice(&segments);
-    page.extend_from_slice(payload);
+    page.extend_from_slice(&body);
     let crc = ogg_crc_update(0, &page);
     page[22..26].copy_from_slice(&crc.to_le_bytes());
-    page
+    Ok(page)
+}
+
+const fn segment_count_for_packet(len: usize) -> usize {
+    if len == 0 {
+        1
+    } else {
+        len.div_ceil(255)
+    }
 }
 
 // ── Packet reassembly ──────────────────────────────────────────────────────
@@ -464,10 +535,11 @@ fn decode_ogg_opus(bytes: &[u8]) -> Result<(Vec<f32>, usize), (String, String)> 
     Ok((pcm, channels))
 }
 
+#[allow(clippy::too_many_lines)]
 fn encode_ogg_opus(
     pcm: &[f32],
     channels: usize,
-    bitrate: u32,
+    settings: &ReencodeSettings,
 ) -> Result<Vec<u8>, (String, String)> {
     if channels != 1 && channels != 2 {
         return Err(tuple(
@@ -481,6 +553,21 @@ fn encode_ogg_opus(
             "decoded PCM length is not a multiple of channel count",
         ));
     }
+    if settings.bitrate <= 0 {
+        return Err(tuple(
+            "invalid_settings",
+            "bitrate must be a positive integer",
+        ));
+    }
+    if !(0..=10).contains(&settings.complexity) {
+        return Err(tuple(
+            "invalid_settings",
+            "complexity must be between 0 and 10",
+        ));
+    }
+
+    let application = parse_application(&settings.application)?;
+    let frame_per_ch = frame_samples_48k(settings.frame_duration_ms)?;
 
     let head = build_opus_head(
         u8::try_from(channels).map_err(|_| tuple("invalid_input", "channel count out of range"))?,
@@ -488,27 +575,59 @@ fn encode_ogg_opus(
     );
     let tags = build_opus_tags();
     let mut out = Vec::new();
-    out.extend_from_slice(&write_page(SERIAL, 0, 0, 0x02, &head));
-    out.extend_from_slice(&write_page(SERIAL, 1, 0, 0x00, &tags));
+    out.extend_from_slice(&write_page(SERIAL, 0, 0, 0x02, &head)?);
+    out.extend_from_slice(&write_page(SERIAL, 1, 0, 0x00, &tags)?);
 
     let per_ch = pcm.len() / channels;
     if per_ch == 0 {
         return Ok(out);
     }
 
-    let mut enc = OpusEncoder::new(48_000, channels, Application::Audio).map_err(|e| {
+    let mut enc = OpusEncoder::new(48_000, channels, application).map_err(|e| {
         tuple(
             "encode_failed",
             &format!("failed to open Opus encoder: {e}"),
         )
     })?;
-    enc.bitrate_bps = i32::try_from(bitrate)
-        .map_err(|_| tuple("invalid_settings", "bitrate out of i32 range"))?;
 
-    let frame_samples = FRAME_48K * channels;
-    let n_frames = per_ch.div_ceil(FRAME_48K);
+    let native = NativeSettings {
+        bitrate: Some(settings.bitrate),
+        complexity: Some(settings.complexity),
+        cbr: Some(settings.cbr),
+        fec: None,
+        packet_loss: None,
+    };
+    crate::encoder::apply_settings(&mut enc, &native)
+        .map_err(|message| tuple("invalid_settings", &message))?;
+
+    let frame_samples = frame_per_ch * channels;
+    let n_frames = per_ch.div_ceil(frame_per_ch);
     let mut packet_buf = vec![0u8; 4000];
     let mut seq = 2u32;
+    // Pack like common libopus/ffmpeg muxers: many complete packets per page
+    // (≤255 lacing values). One-packet-per-page wastes ~28 B × frame count.
+    let mut pending: Vec<Vec<u8>> = Vec::new();
+    let mut pending_segments = 0usize;
+    let mut pending_granule = u64::from(PRE_SKIP);
+
+    let flush = |out: &mut Vec<u8>,
+                 seq: &mut u32,
+                 pending: &mut Vec<Vec<u8>>,
+                 pending_segments: &mut usize,
+                 granule: u64,
+                 eos: bool|
+     -> Result<(), (String, String)> {
+        if pending.is_empty() {
+            return Ok(());
+        }
+        let refs: Vec<&[u8]> = pending.iter().map(Vec::as_slice).collect();
+        let htype = if eos { 0x04 } else { 0x00 };
+        out.extend_from_slice(&write_page_packets(SERIAL, *seq, granule, htype, &refs)?);
+        *seq = seq.wrapping_add(1);
+        pending.clear();
+        *pending_segments = 0;
+        Ok(())
+    };
 
     for f in 0..n_frames {
         let start = f * frame_samples;
@@ -516,28 +635,47 @@ fn encode_ogg_opus(
         let mut frame = pcm[start..frame_end].to_vec();
         frame.resize(frame_samples, 0.0);
         let n = enc
-            .encode(&frame, FRAME_48K, &mut packet_buf)
+            .encode(&frame, frame_per_ch, &mut packet_buf)
             .map_err(|e| {
                 tuple(
                     "encode_failed",
                     &format!("failed to encode Opus frame: {e}"),
                 )
             })?;
+        let pkt = packet_buf[..n].to_vec();
+        let segs = segment_count_for_packet(pkt.len());
         let eos = f + 1 == n_frames;
-        let htype = if eos { 0x04 } else { 0x00 };
         let page_granule = if eos {
             u64::from(PRE_SKIP) + per_ch as u64
         } else {
-            u64::from(PRE_SKIP) + ((f + 1) * FRAME_48K) as u64
+            u64::from(PRE_SKIP) + ((f + 1) * frame_per_ch) as u64
         };
-        out.extend_from_slice(&write_page(
-            SERIAL,
-            seq,
-            page_granule,
-            htype,
-            &packet_buf[..n],
-        ));
-        seq = seq.wrapping_add(1);
+
+        if pending_segments + segs > 255 {
+            flush(
+                &mut out,
+                &mut seq,
+                &mut pending,
+                &mut pending_segments,
+                pending_granule,
+                false,
+            )?;
+        }
+
+        pending.push(pkt);
+        pending_segments += segs;
+        pending_granule = page_granule;
+
+        if eos {
+            flush(
+                &mut out,
+                &mut seq,
+                &mut pending,
+                &mut pending_segments,
+                pending_granule,
+                true,
+            )?;
+        }
     }
     Ok(out)
 }
