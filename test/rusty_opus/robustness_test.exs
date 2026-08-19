@@ -188,6 +188,7 @@ defmodule RustyOpus.RobustnessTest do
   end
 
   describe "fuzz robustness in a disposable child BEAM" do
+    @tag timeout: 60_000
     test "random PCM/packet input never crashes the VM" do
       expr = """
       alias RustyOpus.{Encoder, Decoder}
@@ -229,6 +230,7 @@ defmodule RustyOpus.RobustnessTest do
       end)
     end
 
+    @tag timeout: 60_000
     test "a contained native panic in a child BEAM keeps the parent alive" do
       expr = """
       result = RustyOpus.contained_panic()
