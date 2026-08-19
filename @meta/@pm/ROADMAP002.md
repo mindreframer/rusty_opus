@@ -37,10 +37,10 @@ Three epics, in order. Each epic has a spec and a plan in `@meta/@pm/roadmap002/
 
 Chunking and the encode/decode loop move into Rust so a whole stream is one NIF call.
 
-- [ ] `encoder_encode_many(resource, pcm, frame_size)` — chunk PCM into `frame_size * channels` frames, pad a short last frame with zeros, encode each, return the packet list. Dirty CPU scheduler.
-- [ ] `decoder_decode_many(resource, packets, frame_size)` — decode each packet with shared decoder state, return one concatenated PCM binary. Dirty CPU scheduler. 1-byte DTX packets still conceal.
-- [ ] `Encoder.encode_many/2` and `Decoder.decode_many/2`. Optional `:frame_size` (default `div(rate, 50)`).
-- [ ] Tests: bulk output matches a per-frame loop on the same handle; stereo; remainder is padded not dropped; empty packet list → empty PCM; closed handle → `:closed`; counters return to baseline after open/close.
+- [x] `encoder_encode_many(resource, pcm, frame_size)` — chunk PCM into `frame_size * channels` frames, pad a short last frame with zeros, encode each, return the packet list. Dirty CPU scheduler.
+- [x] `decoder_decode_many(resource, packets, frame_size)` — decode each packet with shared decoder state, return one concatenated PCM binary. Dirty CPU scheduler. 1-byte DTX packets still conceal.
+- [x] `Encoder.encode_many/2` and `Decoder.decode_many/2`. Optional `:frame_size` (default `div(rate, 50)`).
+- [x] Tests: bulk output matches a per-frame loop on the same handle; stereo; remainder is padded not dropped; empty packet list → empty PCM; closed handle → `:closed`; counters return to baseline after open/close.
 
 **Done when:** a multi-second PCM buffer encodes, and a list of packets decodes, in one call each, equivalent to the 0.1.0 per-frame loop.
 

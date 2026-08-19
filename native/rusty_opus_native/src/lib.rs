@@ -71,6 +71,16 @@ fn encoder_encode<'a>(
     encoder::encoder_encode(env, resource, pcm, frame_size)
 }
 
+#[rustler::nif(schedule = "DirtyCpu")]
+fn encoder_encode_many<'a>(
+    env: rustler::Env<'a>,
+    resource: rustler::ResourceArc<EncoderResource>,
+    pcm: rustler::Binary<'a>,
+    frame_size: usize,
+) -> Result<Vec<rustler::Binary<'a>>, (String, String)> {
+    encoder::encoder_encode_many(env, resource, pcm, frame_size)
+}
+
 #[rustler::nif]
 fn encoder_set(
     resource: rustler::ResourceArc<EncoderResource>,
@@ -105,6 +115,16 @@ fn decoder_decode<'a>(
     frame_size: usize,
 ) -> Result<rustler::Binary<'a>, (String, String)> {
     decoder::decoder_decode(env, resource, packet, frame_size)
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+fn decoder_decode_many<'a>(
+    env: rustler::Env<'a>,
+    resource: rustler::ResourceArc<DecoderResource>,
+    packets: Vec<rustler::Binary<'a>>,
+    frame_size: usize,
+) -> Result<rustler::Binary<'a>, (String, String)> {
+    decoder::decoder_decode_many(env, resource, packets, frame_size)
 }
 
 #[rustler::nif]

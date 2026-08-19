@@ -81,6 +81,32 @@ defmodule RustyOpus.Decoder do
   def decode(_, _, _), do: {:error, RustyOpus.rustle(:invalid_input, "packet must be a binary")}
 
   @doc """
+  Decodes a list of Opus packets into one concatenated PCM binary.
+
+  Packets share decoder state (including 1-byte DTX concealment). Defaults
+  `frame_size` to `div(rate, 50)` (20 ms). An empty list returns an empty PCM binary.
+  """
+  @spec decode_many(t(), [binary()], keyword()) :: {:ok, binary()} | {:error, Error.t()}
+  def decode_many(decoder, packets, opts \\ [])
+
+  def decode_many(%__MODULE__{resource: resource, rate: rate}, packets, opts)
+      when is_list(packets) and is_list(opts) do
+    if Enum.all?(packets, &is_binary/1) do
+      frame_size = Keyword.get(opts, :frame_size, div(rate, 50))
+
+      case Native.decoder_decode_many(resource, packets, frame_size) do
+        {:ok, pcm} -> {:ok, pcm}
+        {:error, {reason, message}} -> {:error, RustyOpus.rustle(reason, message)}
+      end
+    else
+      {:error, RustyOpus.rustle(:invalid_input, "packets must be a list of binaries")}
+    end
+  end
+
+  def decode_many(_, _, _),
+    do: {:error, RustyOpus.rustle(:invalid_input, "packets must be a list of binaries")}
+
+  @doc """
   Closes the decoder idempotently. Further calls return `{:error, %Error{reason: :closed}}`.
   """
   @spec close(t()) :: :ok

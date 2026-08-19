@@ -2,11 +2,11 @@
 
 ## Progress
 
-- [ ] Phase 1.1: Implement `encoder_encode_many` in Rust (chunk, pad last frame, encode, DirtyCpu).
-- [ ] Phase 1.2: Implement `decoder_decode_many` in Rust (decode list, concatenate PCM, DirtyCpu, DTX conceal).
-- [ ] Phase 1.3: Add `Encoder.encode_many/2` and `Decoder.decode_many/2` with optional `:frame_size`.
-- [ ] Phase 1.4: Equivalence, padding, empty-input, closed-handle, and lifecycle tests.
-- [ ] Phase 1.5: Pass the epic gate, verify every Epic 1 criterion, and prepare the focused commit.
+- [x] Phase 1.1: Implement `encoder_encode_many` in Rust (chunk, pad last frame, encode, DirtyCpu).
+- [x] Phase 1.2: Implement `decoder_decode_many` in Rust (decode list, concatenate PCM, DirtyCpu, DTX conceal).
+- [x] Phase 1.3: Add `Encoder.encode_many/2` and `Decoder.decode_many/2` with optional `:frame_size`.
+- [x] Phase 1.4: Equivalence, padding, empty-input, closed-handle, and lifecycle tests.
+- [x] Phase 1.5: Pass the epic gate, verify every Epic 1 criterion, and prepare the focused commit.
 
 ## Implementation Steps
 
@@ -26,18 +26,18 @@
 
 ## Test Isolation Checklist
 
-- [ ] Bulk tests use unique encoder/decoder handles; no shared mutable codec state.
-- [ ] Remainder/padding cases use a PCM length that is not a multiple of the frame.
-- [ ] Resource-counter checks compare against a captured baseline, not sleeps.
-- [ ] Existing `encode/3` and `decode/3` tests remain unmodified in intent.
+- [x] Bulk tests use unique encoder/decoder handles; no shared mutable codec state.
+- [x] Remainder/padding cases use a PCM length that is not a multiple of the frame.
+- [x] Resource-counter checks compare against a captured baseline, not sleeps.
+- [x] Existing `encode/3` and `decode/3` tests remain unmodified in intent.
 
 ## Quality Gate
 
-- [ ] Bulk NIFs are DirtyCpu-scheduled and panic-contained.
-- [ ] Equivalence, padding, empty, closed, and lifecycle tests pass.
-- [ ] 0.1.0 per-frame APIs unchanged.
-- [ ] `bin/qa_check.sh` is green.
-- [ ] Commit title and body follow the commit rule.
+- [x] Bulk NIFs are DirtyCpu-scheduled and panic-contained.
+- [x] Equivalence, padding, empty, closed, and lifecycle tests pass.
+- [x] 0.1.0 per-frame APIs unchanged.
+- [x] `bin/qa_check.sh` is green.
+- [x] Commit title and body follow the commit rule.
 
 ## Commit Rule
 

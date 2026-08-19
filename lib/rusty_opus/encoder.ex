@@ -108,6 +108,28 @@ defmodule RustyOpus.Encoder do
   def encode(_, _, _), do: {:error, RustyOpus.rustle(:invalid_input, "pcm must be a binary")}
 
   @doc """
+  Encodes a whole PCM buffer into a list of Opus packets.
+
+  Chunks `pcm` into frames of `frame_size` samples per channel. A short last frame is
+  padded with silence (zero samples), never truncated. Defaults `frame_size` to
+  `div(rate, 50)` (20 ms). Empty PCM returns an empty list.
+  """
+  @spec encode_many(t(), binary(), keyword()) :: {:ok, [binary()]} | {:error, Error.t()}
+  def encode_many(encoder, pcm, opts \\ [])
+
+  def encode_many(%__MODULE__{resource: resource, rate: rate}, pcm, opts)
+      when is_binary(pcm) and is_list(opts) do
+    frame_size = Keyword.get(opts, :frame_size, div(rate, 50))
+
+    case Native.encoder_encode_many(resource, pcm, frame_size) do
+      {:ok, packets} -> {:ok, packets}
+      {:error, {reason, message}} -> {:error, RustyOpus.rustle(reason, message)}
+    end
+  end
+
+  def encode_many(_, _, _), do: {:error, RustyOpus.rustle(:invalid_input, "pcm must be a binary")}
+
+  @doc """
   Updates quality settings on a live encoder. See `RustyOpus.Settings`.
   """
   @spec set(t(), keyword()) :: :ok | {:error, Error.t()}

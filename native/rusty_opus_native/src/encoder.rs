@@ -110,6 +110,34 @@ pub fn encoder_new(
     }))
 }
 
+fn encode_frame<'a>(
+    env: Env<'a>,
+    resource: &ResourceArc<EncoderResource>,
+    inner: &mut EncoderInner,
+    samples: &[f32],
+    frame_size: usize,
+) -> Result<Binary<'a>, (String, String)> {
+    let mut output = vec![0u8; 4096];
+    // opus-rs can panic on malformed internal state; contain it so the panic never
+    // unwinds across the NIF boundary. After a panic the encoder is marked closed
+    // because its internal state may be inconsistent.
+    let written = if let Ok(result) = catch_unwind(AssertUnwindSafe(|| {
+        inner.encoder.encode(samples, frame_size, &mut output)
+    })) {
+        result.map_err(|m| tuple("encode_failed", m))?
+    } else {
+        resource.closed.store(true, Ordering::SeqCst);
+        return Err(tuple(
+            "codec_panicked",
+            "opus-rs encoder panicked; encoder is now unusable",
+        ));
+    };
+
+    let mut binary = NewBinary::new(env, written);
+    binary.as_mut_slice().copy_from_slice(&output[..written]);
+    Ok(binary.into())
+}
+
 #[allow(clippy::needless_pass_by_value)]
 #[allow(clippy::significant_drop_tightening)] // the guard must live across the encode call
 pub fn encoder_encode<'a>(
@@ -139,25 +167,51 @@ pub fn encoder_encode<'a>(
         ));
     }
 
-    let mut output = vec![0u8; 4096];
-    // opus-rs can panic on malformed internal state; contain it so the panic never
-    // unwinds across the NIF boundary. After a panic the encoder is marked closed
-    // because its internal state may be inconsistent.
-    let written = if let Ok(result) = catch_unwind(AssertUnwindSafe(|| {
-        inner.encoder.encode(&samples, frame_size, &mut output)
-    })) {
-        result.map_err(|m| tuple("encode_failed", m))?
-    } else {
-        resource.closed.store(true, Ordering::SeqCst);
-        return Err(tuple(
-            "codec_panicked",
-            "opus-rs encoder panicked; encoder is now unusable",
-        ));
-    };
+    encode_frame(env, &resource, &mut inner, &samples, frame_size)
+}
 
-    let mut binary = NewBinary::new(env, written);
-    binary.as_mut_slice().copy_from_slice(&output[..written]);
-    Ok(binary.into())
+#[allow(clippy::needless_pass_by_value)]
+#[allow(clippy::significant_drop_tightening)] // the guard must live across every encode call
+pub fn encoder_encode_many<'a>(
+    env: Env<'a>,
+    resource: ResourceArc<EncoderResource>,
+    pcm: Binary<'a>,
+    frame_size: usize,
+) -> Result<Vec<Binary<'a>>, (String, String)> {
+    if resource.closed.load(Ordering::SeqCst) {
+        return Err(tuple("closed", "encoder is closed"));
+    }
+    if frame_size == 0 {
+        return Err(tuple("invalid_input", "frame_size must be greater than 0"));
+    }
+
+    let samples = to_f32s(pcm.as_slice()).map_err(|m| tuple("invalid_pcm", &m))?;
+    if samples.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let mut inner = resource
+        .inner
+        .lock()
+        .map_err(|_| tuple("poisoned", "encoder mutex is poisoned"))?;
+
+    let samples_per_frame = inner.channels * frame_size;
+    let mut packets = Vec::new();
+    let mut offset = 0;
+
+    while offset < samples.len() {
+        let chunk_end = (offset + samples_per_frame).min(samples.len());
+        let mut frame = samples[offset..chunk_end].to_vec();
+        if frame.len() < samples_per_frame {
+            frame.resize(samples_per_frame, 0.0);
+        }
+
+        let packet = encode_frame(env, &resource, &mut inner, &frame, frame_size)?;
+        packets.push(packet);
+        offset = chunk_end;
+    }
+
+    Ok(packets)
 }
 
 #[allow(clippy::needless_pass_by_value)]

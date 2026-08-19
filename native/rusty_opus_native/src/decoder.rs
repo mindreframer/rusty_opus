@@ -48,6 +48,43 @@ pub fn decoder_new(
     }))
 }
 
+fn decode_packet_into(
+    resource: &ResourceArc<DecoderResource>,
+    inner: &mut DecoderInner,
+    packet: &[u8],
+    frame_size: usize,
+    pcm_out: &mut Vec<f32>,
+) -> Result<(), (String, String)> {
+    let mut output = vec![0f32; inner.channels * frame_size];
+    // opus-rs can panic on hostile packets (e.g. corrupt SILK parameters); contain
+    // the panic at the NIF boundary and poison the decoder afterwards.
+    let written = if let Ok(result) = catch_unwind(AssertUnwindSafe(|| {
+        inner.decoder.decode(packet, frame_size, &mut output)
+    })) {
+        result.map_err(|m| tuple("decode_failed", m))?
+    } else {
+        resource.closed.store(true, Ordering::SeqCst);
+        return Err(tuple(
+            "codec_panicked",
+            "opus-rs decoder panicked; decoder is now unusable",
+        ));
+    };
+
+    let total = written.saturating_mul(inner.channels).min(output.len());
+    pcm_out.extend_from_slice(&output[..total]);
+    Ok(())
+}
+
+fn samples_to_binary<'a>(env: Env<'a>, samples: &[f32]) -> Binary<'a> {
+    let mut binary = NewBinary::new(env, samples.len() * 4);
+    for (i, sample) in samples.iter().enumerate() {
+        let bytes = sample.to_le_bytes();
+        let start = i * 4;
+        binary.as_mut_slice()[start..start + 4].copy_from_slice(&bytes);
+    }
+    binary.into()
+}
+
 #[allow(clippy::needless_pass_by_value)]
 #[allow(clippy::significant_drop_tightening)] // the guard must live across the decode call
 pub fn decoder_decode<'a>(
@@ -64,31 +101,52 @@ pub fn decoder_decode<'a>(
         .lock()
         .map_err(|_| tuple("poisoned", "decoder mutex is poisoned"))?;
 
-    let mut output = vec![0f32; inner.channels * frame_size];
-    // opus-rs can panic on hostile packets (e.g. corrupt SILK parameters); contain
-    // the panic at the NIF boundary and poison the decoder afterwards.
-    let written = if let Ok(result) = catch_unwind(AssertUnwindSafe(|| {
-        inner
-            .decoder
-            .decode(packet.as_slice(), frame_size, &mut output)
-    })) {
-        result.map_err(|m| tuple("decode_failed", m))?
-    } else {
-        resource.closed.store(true, Ordering::SeqCst);
-        return Err(tuple(
-            "codec_panicked",
-            "opus-rs decoder panicked; decoder is now unusable",
-        ));
-    };
+    let mut pcm = Vec::new();
+    decode_packet_into(
+        &resource,
+        &mut inner,
+        packet.as_slice(),
+        frame_size,
+        &mut pcm,
+    )?;
+    Ok(samples_to_binary(env, &pcm))
+}
 
-    let total = written.saturating_mul(inner.channels).min(output.len());
-    let mut binary = NewBinary::new(env, total * 4);
-    for (i, sample) in output[..total].iter().enumerate() {
-        let bytes = sample.to_le_bytes();
-        let start = i * 4;
-        binary.as_mut_slice()[start..start + 4].copy_from_slice(&bytes);
+#[allow(clippy::needless_pass_by_value)]
+#[allow(clippy::significant_drop_tightening)] // the guard must live across every decode call
+pub fn decoder_decode_many<'a>(
+    env: Env<'a>,
+    resource: ResourceArc<DecoderResource>,
+    packets: Vec<Binary<'a>>,
+    frame_size: usize,
+) -> Result<Binary<'a>, (String, String)> {
+    if resource.closed.load(Ordering::SeqCst) {
+        return Err(tuple("closed", "decoder is closed"));
     }
-    Ok(binary.into())
+    if frame_size == 0 {
+        return Err(tuple("invalid_input", "frame_size must be greater than 0"));
+    }
+    if packets.is_empty() {
+        return Ok(samples_to_binary(env, &[]));
+    }
+
+    let mut inner = resource
+        .inner
+        .lock()
+        .map_err(|_| tuple("poisoned", "decoder mutex is poisoned"))?;
+
+    let mut pcm = Vec::with_capacity(packets.len() * inner.channels * frame_size);
+    for packet in packets {
+        decode_packet_into(
+            &resource,
+            &mut inner,
+            packet.as_slice(),
+            frame_size,
+            &mut pcm,
+        )?;
+    }
+
+    Ok(samples_to_binary(env, &pcm))
 }
 
 #[allow(clippy::needless_pass_by_value)] // NIF boundary takes ownership
