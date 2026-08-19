@@ -16,17 +16,9 @@ and licenses so a build is reproducible and the third-party surface is auditable
 - **Edition:** 2024 (requires Rust 1.85+; RustyOpus pins `1.89.0`).
 
 RustyOpus does **not** modify `opus-rs`. It wraps the public `OpusEncoder`/`OpusDecoder`
-API through Rustler. The pinned revision is exactly what `Cargo.lock` records.
-
-## Ogg Opus reencode: ruopus
-
-- **Crate:** `ruopus`
-- **Version:** `0.1.2` (pinned exactly; `default-features = false`, features = `["std"]`
-  so optional spectrogram deps that need a newer rustc are not pulled in)
-- **Repository:** <https://github.com/jmg049/ruopus>
-- **License:** MIT (see `NOTICE`)
-- **Role:** `decode_ogg_opus` / `encode_ogg_opus` behind `RustyOpus.reencode/2`. No C
-  libopus and no ffmpeg on this path.
+API through Rustler for packet/PCM work, and uses the same codec behind thin in-crate
+Ogg Opus family-0 demux/mux for `RustyOpus.reencode/2` (ADR003). The pinned revision is
+exactly what `Cargo.lock` records.
 
 ## NIF layer: rustler
 

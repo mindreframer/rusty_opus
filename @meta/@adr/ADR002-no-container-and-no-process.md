@@ -1,6 +1,6 @@
 # ADR002: No Container Parsing and No External Process in the Runtime Path
 
-- **Status:** Accepted
+- **Status:** Accepted (narrowed by [ADR003](ADR003-reencode-opus-rs-ogg.md) for `reencode/2`)
 - **Date:** ROADMAP001 Epic 1
 
 ## Context
@@ -12,17 +12,18 @@ safety burden.
 
 ## Decision
 
-- RustyOpus targets the raw Opus CODEC only. It implements no container parsing, demuxing,
-  or muxing (Ogg/WebM, tags, metadata).
+- Packet/PCM APIs target the raw Opus CODEC only. They implement no container parsing,
+  demuxing, or muxing (Ogg/WebM, tags, metadata).
+- **Exception (ADR003):** `RustyOpus.reencode/2` may demux/mux **Ogg Opus family 0** in
+  process via thin in-crate glue and `opus-rs`. No other containers.
 - No embedded path shells out to ffmpeg or launches any process, Port, or executable for
-  codec work.
+  codec or container work.
 - ffmpeg is used only by the developer-side fixture-import script
   (`scripts/import_fixtures.sh`) that pre-decodes Ogg/Opus to PCM before files are
   committed as fixtures; runtime and test code never invoke it.
 
 ## Consequences
 
-- Small, safe, embeddable surface; no process-lifecycle or container code to maintain.
-- Callers who need Ogg/WebM must demux/mux in their own layer; RustyOpus stays a codec.
-- Fixtures are committed as PCM (and a golden Opus packet) so tests need neither the
-  foreign DB nor ffmpeg at runtime.
+- Small, safe, embeddable surface; no process-lifecycle or foreign container code.
+- Callers who need WebM/MP4 (or Ogg outside `reencode/2`) demux/mux in their own layer.
+- Fixtures remain usable without the foreign DB or ffmpeg at runtime.

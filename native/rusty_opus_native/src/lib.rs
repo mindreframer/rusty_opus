@@ -2,7 +2,7 @@
 //!
 //! Wires the deterministic smoke/error boundary, the Opus encoder/decoder
 //! resources around the pinned `opus-rs` codec, and Ogg Opus blob reencode
-//! via pure-Rust `ruopus`.
+//! via thin in-crate Ogg glue + `opus-rs` (see ADR003).
 
 use std::panic::{catch_unwind, AssertUnwindSafe};
 

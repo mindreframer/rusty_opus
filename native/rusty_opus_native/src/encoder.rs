@@ -70,7 +70,7 @@ fn apply_settings(encoder: &mut OpusEncoder, settings: &NativeSettings) -> Resul
 }
 
 fn to_f32s(bytes: &[u8]) -> Result<Vec<f32>, String> {
-    if bytes.len() % 4 != 0 {
+    if !bytes.len().is_multiple_of(4) {
         return Err("PCM byte length must be a multiple of 4".to_string());
     }
     let mut samples = Vec::with_capacity(bytes.len() / 4);

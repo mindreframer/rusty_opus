@@ -2,8 +2,9 @@
 
 RustyOpus wraps pure-Rust Opus through Rustler.
 
-- **Ogg Opus blobs** — `RustyOpus.reencode/2` (via `ruopus`) demuxes, re-encodes at a
-  numeric bitrate, and remuxes. This is the path for real `.ogg` / `audio/ogg` files.
+- **Ogg Opus blobs** — `RustyOpus.reencode/2` demuxes, re-encodes at a numeric bitrate
+  with `opus-rs`, and remuxes via thin in-crate Ogg glue (ADR003). This is the path for
+  real `.ogg` / `audio/ogg` files.
 - **Raw Opus packets** and **PCM** — `encode` / `decode` / `transcode` and the
   `Encoder` / `Decoder` modules (via `opus-rs`). No container on this path.
 - WebM/MP4 and ffmpeg are out of scope.

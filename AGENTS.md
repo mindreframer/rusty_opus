@@ -16,9 +16,10 @@
 ## Native Boundary
 
 - RustyOpus exposes the pure-Rust `opus-rs` codec through a Rustler NIF. It must not shell out to ffmpeg, launch a Port, or spawn a process for codec work in the library path. ffmpeg appears only in fixture-import tooling, never in runtime or test code under test.
-- RustyOpus wraps the raw Opus CODEC (RFC 6716) for packet/PCM work and, via pure-Rust
-  `ruopus`, can demux/remux **Ogg Opus** for `RustyOpus.reencode/2` only. It must not
-  shell out to ffmpeg, launch a Port, or spawn a process for codec or container work.
+- RustyOpus wraps the raw Opus CODEC (RFC 6716) for packet/PCM work and, for
+  `RustyOpus.reencode/2` only, demuxes/remuxes **Ogg Opus family 0** with thin
+  in-crate glue on top of the same `opus-rs` codec (ADR003). It must not shell
+  out to ffmpeg, launch a Port, or spawn a process for codec or container work.
   Other containers (WebM/MP4) stay out of scope. ffmpeg appears only in fixture-import
   tooling, never in runtime or test code under test.
 - For packet/PCM APIs it must not parse Ogg; callers that already hold raw packets use

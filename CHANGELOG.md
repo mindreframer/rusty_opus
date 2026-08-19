@@ -1,9 +1,17 @@
 # Changelog
 
+## 0.3.1 — Faster Ogg reencode on Apple Silicon (ADR003)
+
+- `reencode/2` uses pinned `opus-rs` (NEON on aarch64) plus thin in-crate Ogg Opus
+  family-0 demux/mux; drops `ruopus` (see ADR003).
+- Same Elixir API (`bitrate:` required). MemoMoo ~7 s fixture: ~24 ms median at
+  20 kb/s vs ~965 ms with `ruopus` on M3 Ultra (~40×).
+- Packet/PCM APIs unchanged.
+
 ## 0.3.0 — Reencode Ogg Opus blobs at a numeric bitrate
 
 - `RustyOpus.reencode/2` takes an Ogg Opus blob and `bitrate:` (bits/s) and returns a
-  smaller Ogg Opus blob. Pure Rust via `ruopus`. No ffmpeg, no C libopus, no quality atoms.
+  smaller Ogg Opus blob. Pure Rust. No ffmpeg, no C libopus, no quality atoms.
 - Hard-tested against real MemoMoo `audio_versions` speech fixtures.
 - Packet/PCM APIs from 0.2.0 are unchanged.
 

@@ -40,7 +40,7 @@ No WebM/MP4. Never launches an external process. See the [codec guide](docs/code
 
 ## Features
 
-- `RustyOpus.reencode/2` — Ogg Opus blob → lower bitrate Ogg Opus blob (pure Rust `ruopus`)
+- `RustyOpus.reencode/2` — Ogg Opus blob → lower bitrate Ogg Opus blob (`opus-rs` + thin Ogg)
 - `RustyOpus.encode/4`, `decode/4`, `transcode/5` — whole-stream raw packet/PCM path
 - `RustyOpus.Encoder` / `Decoder` — per-frame control
 - Dirty-scheduled codec work; panic containment at the NIF boundary
@@ -60,7 +60,7 @@ Other targets (e.g. Intel macOS) build from source with `RUSTY_OPUS_BUILD=1` and
 
 | Elixir module | Native crate | Rust packages |
 | --- | --- | --- |
-| `RustyOpus` | `native/rusty_opus_native` | `opus-rs 0.1.29`, `ruopus 0.1.2` |
+| `RustyOpus` | `native/rusty_opus_native` | `opus-rs 0.1.29` |
 
 ## Development
 
@@ -75,11 +75,10 @@ Committed fixtures include real MemoMoo `audio_versions` Ogg Opus speech blobs f
 
 1. Bump the version in `mix.exs` and `native/rusty_opus_native/Cargo.toml`.
 2. Run `bin/qa_check.sh` and push the green version commit.
-3. Tag `v0.3.0`; the release workflow builds and smoke-tests every precompiled NIF.
+3. Tag `v0.3.1`; the release workflow builds and smoke-tests every precompiled NIF.
 4. Publish the Hex package and GitHub release (maintainer step).
 
 ## License
 
-RustyOpus is licensed under the [Apache License 2.0](LICENSE). Bundled codecs:
-`opus-rs` (BSD-3-Clause) and `ruopus` (MIT) — see [NOTICE](NOTICE) and
-[provenance](docs/provenance.md).
+RustyOpus is licensed under the [Apache License 2.0](LICENSE). Bundled codec:
+`opus-rs` (BSD-3-Clause) — see [NOTICE](NOTICE) and [provenance](docs/provenance.md).

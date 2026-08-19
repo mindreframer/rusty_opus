@@ -5,13 +5,9 @@ This product includes code from the following third-party projects:
 
 - `opus-rs`, a pure-Rust implementation of the Opus audio codec (RFC 6716),
   Copyright (c) restsend and contributors, licensed under the BSD-3-Clause
-  license. Pinned revision: 0.1.29 (see docs/provenance.md). The upstream
-  BSD-3-Clause license text is reproduced below.
-
-- `ruopus`, a pure-Rust Opus codec with Ogg Opus (RFC 7845) helpers,
-  Copyright (c) Jack Geraghty and contributors, licensed under the MIT
-  license. Pinned revision: 0.1.2 (see docs/provenance.md). Used for
-  `RustyOpus.reencode/2` (Ogg blob → lower bitrate Ogg blob).
+  license. Pinned revision: 0.1.29 (see docs/provenance.md). Used for packet
+  encode/decode and for `RustyOpus.reencode/2` (Ogg demux/mux is in-crate;
+  ADR003). The upstream BSD-3-Clause license text is reproduced below.
 
 - `rustler`, Copyright (c) 2017 The Rustler contributors, licensed under
   MIT OR Apache-2.0.

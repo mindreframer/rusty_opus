@@ -63,7 +63,7 @@ defmodule RustyOpus do
   Reencodes an Ogg Opus blob at a target bitrate (bits/s).
 
   This is the simple API for shrinking real `.ogg` / `audio/ogg` files in memory:
-  demux → decode → encode at `bitrate` → remux, all pure Rust (`ruopus`).
+  demux → decode → encode at `bitrate` → remux, all pure Rust (`opus-rs` + thin Ogg).
 
   ## Options
 

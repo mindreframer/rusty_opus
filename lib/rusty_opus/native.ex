@@ -20,8 +20,7 @@ defmodule RustyOpus.Native do
     ],
     nif_versions: ["2.15"],
     cargo: {:rustup, "1.89.0"},
-    # Always release: debug Opus encode (ruopus/opus-rs) is orders of magnitude too slow
-    # for multi-second speech and blocks the test/CI pipeline.
+    # Always release: debug Opus encode is orders of magnitude too slow for CI.
     mode: :release
 
   def smoke, do: :erlang.nif_error(:nif_not_loaded)

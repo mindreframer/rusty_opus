@@ -7,8 +7,8 @@ defmodule RustyOpus.ReencodeTest do
   # Real MemoMoo audio_versions Ogg Opus speech (committed fixture).
   @fixture Path.expand("../fixtures/moo_audio_versions_1.ogg", __DIR__)
 
-  # Hard cap: ~7s of speech must reencode well under this (release NIF).
-  @max_reencode_ms 1_500
+  # Hard cap after ADR003 (opus-rs + NEON): ~7s speech must finish well under this.
+  @max_reencode_ms 200
 
   test "reencode shrinks a real DB Ogg blob and stays valid" do
     source = File.read!(@fixture)
@@ -26,7 +26,10 @@ defmodule RustyOpus.ReencodeTest do
     assert {:error, %Error{reason: :invalid_settings}} = RustyOpus.reencode(source, [])
     assert {:error, %Error{reason: :invalid_settings}} = RustyOpus.reencode(source, bitrate: 0)
     assert {:error, %Error{reason: :invalid_input}} = RustyOpus.reencode(<<>>, bitrate: 20_000)
-    assert {:error, %Error{reason: :decode_failed}} = RustyOpus.reencode(<<"nope">>, bitrate: 20_000)
+
+    assert {:error, %Error{reason: :decode_failed}} =
+             RustyOpus.reencode(<<"nope">>, bitrate: 20_000)
+
     assert {:error, %Error{reason: :invalid_input}} = RustyOpus.reencode(:nope, bitrate: 20_000)
   end
 end

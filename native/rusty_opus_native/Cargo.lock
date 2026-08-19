@@ -64,12 +64,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cab834c73d247e67f4fae452806d17d3c7501756d98c8808d7c9c7aa7d18f973"
 
 [[package]]
-name = "ruopus"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fcfcd963c83fc1ada2180ccdac7f1568d87fb0f2ad7236b266fdc9fb9122fbfd"
-
-[[package]]
 name = "rustler"
 version = "0.36.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -102,10 +96,9 @@ checksum = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
 
 [[package]]
 name = "rusty_opus_native"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "opus-rs",
- "ruopus",
  "rustler",
 ]
 
