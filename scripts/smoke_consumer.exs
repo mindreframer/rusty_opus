@@ -19,6 +19,11 @@ true = is_binary(packet) and byte_size(packet) > 0
 {:ok, decoded} = RustyOpus.decode_packet(packet, sample_rate, 1, frame)
 true = byte_size(decoded) == frame * 4
 
+# The common PCM/file path works without a filesystem input.
+{:ok, descriptor} = RustyOpus.PCM.new(pcm, sample_rate, 1)
+{:ok, wav} = RustyOpus.WAV.encode(descriptor, sample_format: :f32)
+{:ok, %RustyOpus.PCM{}} = RustyOpus.convert(wav, to: :pcm)
+
 # Changing the encoding quality works end to end.
 {:ok, smaller} = RustyOpus.change_quality(packet, sample_rate, 1, :low)
 byte_size(smaller) <= byte_size(packet) + 4

@@ -5,7 +5,7 @@ Add `rusty_opus` to your dependencies:
 ```elixir
 def deps do
   [
-    {:rusty_opus, "~> 0.3.3"}
+    {:rusty_opus, "~> 0.4.0"}
   ]
 end
 ```

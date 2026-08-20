@@ -24,15 +24,18 @@ if ls checksum-*.exs >/dev/null 2>&1; then
   }
 fi
 
-for doc in docs/installation.md docs/codec.md docs/quality.md docs/provenance.md docs/troubleshooting.md; do
+for doc in docs/installation.md docs/codec.md docs/quality.md docs/provenance.md docs/qualification.md docs/troubleshooting.md; do
   test -f "$package_dir/$doc" || { echo "package is missing $doc" >&2; exit 1; }
 done
+
+test -f "$package_dir/test/fixtures/manifest.json" || { echo "package is missing fixture manifest" >&2; exit 1; }
 
 # Native source must be packaged for source builds
 for src in native/rusty_opus_native/Cargo.toml native/rusty_opus_native/Cargo.lock \
            native/rusty_opus_native/build.rs native/rusty_opus_native/rust-toolchain.toml \
            native/rusty_opus_native/src/lib.rs native/rusty_opus_native/src/encoder.rs \
-           native/rusty_opus_native/src/decoder.rs; do
+           native/rusty_opus_native/src/decoder.rs native/rusty_opus_native/src/ogg.rs \
+           native/rusty_opus_native/src/mp3.rs native/rusty_opus_native/src/wav.rs; do
   test -f "$package_dir/$src" || { echo "package is missing $src" >&2; exit 1; }
 done
 

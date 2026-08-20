@@ -1,106 +1,83 @@
-# Codec API and data contract
+# Codec and conversion API
 
-RustyOpus wraps pure-Rust Opus through Rustler.
+RustyOpus provides three small in-memory file modules over one PCM contract. No module
+uses a path, Port, process, system codec, or temporary codec file.
 
-- **Ogg Opus blobs** — `RustyOpus.reencode/2` demuxes, re-encodes at a numeric bitrate
-  with `opus-rs`, and remuxes via thin in-crate Ogg glue (ADR003). This is the path for
-  real `.ogg` / `audio/ogg` files.
-- **Raw Opus packets** and **PCM** — `encode` / `decode` / `transcode` and the
-  `Encoder` / `Decoder` modules (via `opus-rs`). No container on this path.
-- WebM/MP4 and ffmpeg are out of scope.
-
-## Data contract
-
-- **Ogg Opus** is an RFC 7845 binary (starts with `OggS`).
-- **PCM** is a binary of 32-bit little-endian IEEE-754 `f32` samples, interleaved for
-  stereo. Sample count is `byte_size(pcm) / 4`.
-- **Opus packets** are raw binaries, passed verbatim.
-
-## Ogg reencode (file-like)
+## Common conversion
 
 ```elixir
-{:ok, smaller} = RustyOpus.reencode(ogg_blob, bitrate: 20_000)
+{:ok, opus} = RustyOpus.convert(mp3_blob, to: :ogg_opus, bitrate: 20_000)
+{:ok, mp3} = RustyOpus.convert(wav_blob, to: :mp3, bitrate: 64_000, bitrate_mode: :vbr)
+{:ok, wav} = RustyOpus.convert(opus_blob, to: :wav, sample_format: :s16)
+{:ok, pcm} = RustyOpus.convert(mp3_blob, to: :pcm)
 ```
 
-`:bitrate` is required (bits/s). Typical ladder: `8_000` … `32_000`.
+`convert/2` detects RIFF/WAVE, Ogg Opus family 0, and MPEG Layer III bytes. `:from` may
+be `:auto` (the default), `:wav`, `:mp3`, or `:ogg_opus`. Detection is structural and
+never uses a filename. A `%RustyOpus.PCM{}` input is already typed and cannot supply `:from`.
+Bare f32le binaries are never guessed to be PCM.
 
-Speech-oriented defaults (FFmpeg analogues):
+Target options:
 
-| Option | Default | FFmpeg |
+| Target | Required | Allowed shared options |
 | --- | --- | --- |
-| `:application` | `:voip` | `-application voip` |
-| `:complexity` | `10` | `-compression_level 10` |
-| `:cbr` | `false` (VBR) | `-vbr on` |
-| `:frame_duration_ms` | `20` | `-frame_duration` (FFmpeg often uses `60`) |
+| `:ogg_opus` | `:bitrate` | `:bitrate_mode`, `:channels` |
+| `:mp3` | `:bitrate` | `:bitrate_mode`, `:sample_rate`, `:channels` |
+| `:wav` | `:sample_format` | `:sample_rate`, `:channels` |
+| `:pcm` | none | `:sample_rate`, `:channels` |
 
-`frame_duration_ms` may be `10` or `20`. `40` and `60` are not supported by
-`opus-rs` at 48 kHz on this path and return `:invalid_settings`.
+Unknown, duplicate, or target-inapplicable options return `%RustyOpus.Error{reason: :invalid_settings}`.
+Dedicated settings such as Opus application/complexity and MP3 VBR quality are not accepted
+by the common facade.
 
-## Supported configuration (packet/PCM path)
-
-| Parameter | Values |
-| --- | --- |
-| Sampling rate | 8000, 12000, 16000, 24000, 48000 Hz |
-| Channels | 1 (mono) or 2 (stereo) |
-| Application | `:voip`, `:audio`, `:restricted_low_delay` |
-
-Frame sizes (samples per channel) are the standard Opus frame durations (e.g. 320 samples
-at 16 kHz is a 20 ms frame). The PCM buffer passed to `encode/3` must contain exactly
-`frame_size * channels` samples.
-
-## Encoder
+## Shared PCM
 
 ```elixir
-{:ok, encoder} =
-  RustyOpus.Encoder.new(
-    48_000,
-    2,
-    :audio,
-    bitrate: 128_000,
-    complexity: 9,
-    cbr: false,
-    fec: false,
-    packet_loss: 0
-  )
-
-{:ok, packet} = RustyOpus.Encoder.encode(encoder, pcm, 960)
-:ok = RustyOpus.Encoder.close(encoder)
+%RustyOpus.PCM{data: f32le, sample_rate: 44_100, channels: 2}
 ```
 
-`RustyOpus.Encoder.set/2` updates settings on a live encoder. Closing is idempotent;
-calls after close return `{:error, %RustyOpus.Error{reason: :closed}}`.
+`data` is interleaved little-endian IEEE-754 `f32`. Only one or two channels are supported;
+finite samples, aligned frame bytes, positive rates up to 192 kHz, and a bounded 256 MiB
+intermediate are required. Mono-to-stereo duplicates samples. Stereo-to-mono uses
+`(left + right) / 2`. A deterministic linear offline resampler is used for requested rate
+changes; its output frame count is rounded to the nearest rational duration.
 
-## Decoder
+The existing raw APIs still accept bare PCM binaries and raw Opus packet lists. They do not
+parse or emit containers.
 
-```elixir
-{:ok, decoder} = RustyOpus.Decoder.new(16_000, 1)
-{:ok, pcm} = RustyOpus.Decoder.decode(decoder, packet, 320)
-```
+## Dedicated modules
 
-A 1-byte (ToC-only) packet is treated as a lost/DTX frame and concealed with packet-loss
-concealment instead of erroring. Packets declaring a channel count different from the
-decoder are rejected with a stable tagged error.
+Each format has `decode/1`, `encode/2`, and `reencode/2` returning `{:ok, value}` or a
+stable tagged error. Decoders return `%RustyOpus.PCM{}`.
 
-## Errors
+### WAV
 
-Every failure is a `%RustyOpus.Error{}` with a stable `:reason` and a `:message`.
-Panics inside the codec are contained at the NIF boundary and poison the affected
-resource; they never crash the caller process.
+`RustyOpus.WAV` reads RIFF/WAVE PCM and IEEE float mono/stereo, including 8/16/24/32-bit
+integer and 32-bit float samples. Unknown chunks and odd chunk padding are skipped. Output
+requires `sample_format: :s16 | :s24 | :s32 | :f32`; integer output saturates and rounds
+without dither. `:f32` preserves sample bits. Compressed WAV, RF64, RIFX, ADPCM, and
+multichannel input are rejected. Output is minimal and does not preserve metadata.
 
-## Whole-stream facade
+### MP3
 
-The default path encodes, decodes, or transcodes a whole buffer in one call (20 ms
-frames by default; a short last encode frame is padded with silence):
+`RustyOpus.MP3` supports MPEG-1/2/2.5 Layer III mono/stereo. Leading ID3v2 tags are
+validated and skipped. Output requires numeric `:bitrate` in bits/s and accepts standard
+Layer III values for the selected sample-rate family. `:bitrate_mode` is `:vbr` by default
+or `:cbr`; invalid values are rejected rather than snapped. Output metadata is not copied.
+The implementation is pure Rust through the pinned `rusty_mp3 0.7.0` crate.
 
-```elixir
-{:ok, packets} = RustyOpus.encode(pcm, 16_000, 1, quality: :medium)
-{:ok, pcm}     = RustyOpus.decode(packets, 16_000, 1)
-{:ok, smaller} = RustyOpus.transcode(packets, 16_000, 1, :low)
-```
+### Ogg Opus
 
-Single-frame helpers still create, use, and close a short-lived codec:
+`RustyOpus.OggOpus` is the file-like RFC 7845 family-0 surface. Decode reports the logical
+PCM clock as 48 kHz after pre-skip and final-granule trimming. Encode resamples to 48 kHz,
+accepts numeric `:bitrate`, `:bitrate_mode`, and the existing Opus-specific settings. The
+legacy `RustyOpus.reencode/2` delegates to this module; raw packet functions remain separate.
+`:bitrate_mode` and legacy `:cbr` cannot be supplied together.
 
-```elixir
-{:ok, packet} = RustyOpus.encode_pcm(pcm, 16_000, 1, bitrate: 32_000)
-{:ok, pcm} = RustyOpus.decode_packet(packet, 16_000, 1, 320)
-```
+## Boundaries and errors
+
+All file work is in memory and dirty-scheduled. Errors use `RustyOpus.Error` with stable
+reason atoms including `:invalid_settings`, `:invalid_pcm`, `:format_mismatch`,
+`:unsupported_format`, `:decode_failed`, `:encode_failed`, `:allocation_bound`, and
+`:codec_panicked`. Metadata, paths, streaming, WebM, MP4, AAC, FLAC, compressed WAV, and
+non-family-0 Ogg Opus are intentionally out of scope.

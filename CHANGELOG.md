@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.0 — In-process multi-format conversion
+
+- Added `%RustyOpus.PCM{data, sample_rate, channels}` while preserving bare PCM helpers.
+- Added `RustyOpus.WAV`, `RustyOpus.MP3`, and `RustyOpus.OggOpus` decode/encode/reencode APIs.
+- Added `RustyOpus.convert/2` with structural WAV/MP3/Ogg Opus detection and PCM endpoints.
+- Added pure-Rust `rusty_mp3 0.7.0` (Apache-2.0), canonical in-memory RIFF/WAVE handling,
+  deterministic mono/stereo transforms, and bounded offline rate conversion.
+- Metadata is intentionally not copied; WebM, MP4, compressed WAV, multichannel audio,
+  and non-family-0 Ogg Opus remain out of scope.
+
 ## 0.3.3 — Speech-oriented reencode defaults
 
 - `reencode/2` defaults match the FFmpeg speech ladder as closely as `opus-rs`
