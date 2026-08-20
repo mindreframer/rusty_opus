@@ -12,6 +12,7 @@ const CAPTURE: &[u8; 4] = b"OggS";
 const HEADER_LEN: usize = 27;
 const NO_GRANULE: u64 = u64::MAX;
 const MAX_PACKET_LEN: usize = 16 * 1024 * 1024;
+const MAX_BLOB_LEN: usize = 256 * 1024 * 1024;
 /// Max Opus packet duration at 48 kHz (120 ms).
 const MAX_FRAME_48K: usize = 5760;
 /// Typical libopus / opus-rs encoder lookahead at 48 kHz (samples).
@@ -42,6 +43,12 @@ pub fn ogg_reencode<'a>(
     if blob.is_empty() {
         return Err(tuple("invalid_input", "Ogg Opus blob must not be empty"));
     }
+    if blob.len() > MAX_BLOB_LEN {
+        return Err(tuple(
+            "allocation_bound",
+            "Ogg Opus blob exceeds the maximum supported size",
+        ));
+    }
 
     let bytes = blob.as_slice().to_vec();
     let result = catch_unwind(AssertUnwindSafe(|| reencode_inner(&bytes, &settings)));
@@ -62,6 +69,70 @@ pub fn ogg_reencode<'a>(
 fn reencode_inner(bytes: &[u8], settings: &ReencodeSettings) -> Result<Vec<u8>, (String, String)> {
     let (pcm, channels) = decode_ogg_opus(bytes)?;
     encode_ogg_opus(&pcm, channels, settings)
+}
+
+pub fn ogg_decode<'a>(
+    env: Env<'a>,
+    blob: Binary<'a>,
+) -> Result<(i64, usize, Binary<'a>), (String, String)> {
+    if blob.is_empty() {
+        return Err(tuple("invalid_input", "Ogg Opus blob must not be empty"));
+    }
+    if blob.len() > MAX_BLOB_LEN {
+        return Err(tuple(
+            "allocation_bound",
+            "Ogg Opus blob exceeds the maximum supported size",
+        ));
+    }
+    let bytes = blob.as_slice().to_vec();
+    let result = catch_unwind(AssertUnwindSafe(|| decode_ogg_opus(&bytes)));
+    match result {
+        Ok(Ok((samples, channels))) => {
+            let mut binary = NewBinary::new(env, samples.len() * 4);
+            for (index, sample) in samples.iter().enumerate() {
+                binary.as_mut_slice()[index * 4..index * 4 + 4]
+                    .copy_from_slice(&sample.to_le_bytes());
+            }
+            Ok((48_000, channels, binary.into()))
+        }
+        Ok(Err(error)) => Err(error),
+        Err(_) => Err(tuple("codec_panicked", "native Ogg Opus panic contained")),
+    }
+}
+
+pub fn ogg_encode<'a>(
+    env: Env<'a>,
+    pcm: Binary<'a>,
+    channels: usize,
+    settings: ReencodeSettings,
+) -> Result<Binary<'a>, (String, String)> {
+    if pcm.len() % 4 != 0 {
+        return Err(tuple(
+            "invalid_pcm",
+            "PCM byte length must be a multiple of 4",
+        ));
+    }
+    let bytes = pcm.as_slice().to_vec();
+    let result = catch_unwind(AssertUnwindSafe(|| {
+        let mut samples = Vec::with_capacity(bytes.len() / 4);
+        for chunk in bytes.chunks_exact(4) {
+            let sample = f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
+            if !sample.is_finite() {
+                return Err(tuple("invalid_pcm", "PCM samples must be finite"));
+            }
+            samples.push(sample);
+        }
+        encode_ogg_opus(&samples, channels, &settings)
+    }));
+    match result {
+        Ok(Ok(out)) => {
+            let mut binary = NewBinary::new(env, out.len());
+            binary.as_mut_slice().copy_from_slice(&out);
+            Ok(binary.into())
+        }
+        Ok(Err(error)) => Err(error),
+        Err(_) => Err(tuple("codec_panicked", "native Ogg Opus panic contained")),
+    }
 }
 
 fn parse_application(name: &str) -> Result<Application, (String, String)> {
