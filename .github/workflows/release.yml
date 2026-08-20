@@ -236,8 +236,6 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     needs: native
     runs-on: ubuntu-24.04
-    env:
-      HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
     steps:
       - uses: actions/checkout@v6
       - uses: erlef/setup-beam@v1
@@ -277,6 +275,3 @@ jobs:
         run: scripts/clean_consumer.sh --precompiled
       - name: Build and inspect Hex candidate
         run: scripts/package_check.sh
-      - name: Publish Hex package
-        if: env.HEX_API_KEY != ''
-        run: mix hex.publish --yes
