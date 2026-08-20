@@ -1,5 +1,5 @@
 defmodule RustyOpus.QualityTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias RustyOpus.{Error, PCM, Quality}
   alias RustyOpus.TestHelpers.LossyCompare
