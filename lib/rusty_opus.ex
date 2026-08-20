@@ -1,4 +1,6 @@
 defmodule RustyOpus do
+  import Bitwise
+
   @moduledoc """
   Pure-Rust [Opus](https://opus-codec.org/) (RFC 6716) for Elixir.
 
@@ -94,17 +96,13 @@ defmodule RustyOpus do
   def reencode(blob, opts \\ [])
 
   def reencode(blob, opts) when is_binary(blob) and is_list(opts) do
-    with {:ok, settings} <- reencode_settings(opts) do
-      case RustyOpus.Native.ogg_reencode(blob, settings) do
-        {:ok, out} -> {:ok, out}
-        {:error, {reason, message}} -> {:error, rustle(reason, message)}
-      end
-    end
+    RustyOpus.OggOpus.reencode(blob, opts)
   end
 
   def reencode(_, _), do: {:error, rustle(:invalid_input, "Ogg Opus blob must be a binary")}
 
-  defp reencode_settings(opts) do
+  @doc false
+  def reencode_settings(opts) do
     with {:ok, bitrate} <- fetch_bitrate(opts),
          {:ok, application} <- fetch_application(opts),
          {:ok, complexity} <- fetch_complexity(opts),
@@ -148,8 +146,17 @@ defmodule RustyOpus do
   end
 
   defp fetch_cbr(opts) do
-    case Keyword.get(opts, :cbr, false) do
+    value =
+      case Keyword.fetch(opts, :bitrate_mode) do
+        {:ok, :vbr} -> false
+        {:ok, :cbr} -> true
+        {:ok, _} -> :invalid
+        :error -> Keyword.get(opts, :cbr, false)
+      end
+
+    case value do
       cbr when is_boolean(cbr) -> {:ok, cbr}
+      :invalid -> {:error, rustle(:invalid_settings, "bitrate_mode must be :vbr or :cbr")}
       _ -> {:error, rustle(:invalid_settings, "cbr must be a boolean")}
     end
   end
@@ -332,6 +339,345 @@ defmodule RustyOpus do
     %RustyOpus.Error{reason: normalize_reason(reason), message: message}
   end
 
+  @doc "Converts a WAV, MP3, or Ogg Opus blob, or a `%RustyOpus.PCM{}`, to a supported target."
+  @spec convert(binary() | RustyOpus.PCM.t(), keyword()) ::
+          {:ok, binary() | RustyOpus.PCM.t()} | {:error, RustyOpus.Error.t()}
+  def convert(input, opts) when is_list(opts) do
+    if not Keyword.keyword?(opts) do
+      {:error, rustle(:invalid_settings, "conversion options must be a keyword list")}
+    else
+      convert_valid(input, opts)
+    end
+  end
+
+  def convert(_, _),
+    do: {:error, rustle(:invalid_settings, "conversion options must be a keyword list")}
+
+  defp convert_valid(input, opts) do
+    with {:ok, target} <- conversion_target(opts),
+         :ok <- conversion_options(opts, target),
+         {:ok, source, pcm} <- conversion_input(input, opts),
+         {:ok, result} <- convert_pipeline(source, pcm, target, opts) do
+      {:ok, result}
+    end
+  end
+
+  defp conversion_target(opts) do
+    case Keyword.fetch(opts, :to) do
+      {:ok, target} when target in [:ogg_opus, :mp3, :wav, :pcm] ->
+        {:ok, target}
+
+      {:ok, _} ->
+        {:error, rustle(:invalid_settings, ":to must be :ogg_opus, :mp3, :wav, or :pcm")}
+
+      :error ->
+        {:error, rustle(:invalid_settings, ":to is required")}
+    end
+  end
+
+  defp conversion_options(opts, target) do
+    if not Keyword.keyword?(opts) do
+      {:error, rustle(:invalid_settings, "conversion options must be a keyword list")}
+    else
+      keys = Keyword.keys(opts)
+      allowed = [:to, :from, :bitrate, :bitrate_mode, :sample_rate, :channels, :sample_format]
+
+      target_allowed =
+        case target do
+          :ogg_opus -> [:to, :from, :bitrate, :bitrate_mode, :channels]
+          :mp3 -> [:to, :from, :bitrate, :bitrate_mode, :sample_rate, :channels]
+          :wav -> [:to, :from, :sample_rate, :channels, :sample_format]
+          :pcm -> [:to, :from, :sample_rate, :channels]
+        end
+
+      with :ok <- validate_common_values(opts, target) do
+        cond do
+          length(keys) != length(Enum.uniq(keys)) ->
+            {:error, rustle(:invalid_settings, "duplicate conversion options are not allowed")}
+
+          Enum.any?(keys, &(&1 not in allowed)) ->
+            {:error, rustle(:invalid_settings, "unknown conversion option")}
+
+          Enum.any?(keys, &(&1 not in target_allowed)) ->
+            {:error,
+             rustle(:invalid_settings, "conversion option is not applicable to #{target}")}
+
+          target in [:ogg_opus, :mp3] and not Keyword.has_key?(opts, :bitrate) ->
+            {:error, rustle(:invalid_settings, "bitrate is required for #{target} output")}
+
+          target == :wav and not Keyword.has_key?(opts, :sample_format) ->
+            {:error, rustle(:invalid_settings, "sample_format is required for WAV output")}
+
+          target == :pcm and Keyword.has_key?(opts, :bitrate) ->
+            {:error, rustle(:invalid_settings, "bitrate is not applicable to PCM output")}
+
+          true ->
+            :ok
+        end
+      end
+    end
+  end
+
+  defp validate_common_values(opts, _target) do
+    checks = [
+      {Keyword.get(opts, :bitrate, :missing),
+       fn value -> value == :missing or (is_integer(value) and value > 0) end,
+       "bitrate must be a positive integer"},
+      {Keyword.get(opts, :bitrate_mode, :vbr), &(&1 in [:vbr, :cbr]),
+       "bitrate_mode must be :vbr or :cbr"},
+      {Keyword.get(opts, :sample_rate, :missing),
+       fn value ->
+         value == :missing or (is_integer(value) and value > 0 and value <= 192_000)
+       end, "sample_rate must be an integer between 1 and 192000"},
+      {Keyword.get(opts, :channels, :missing),
+       fn value -> value == :missing or value in [1, 2] end, "channels must be 1 or 2"},
+      {Keyword.get(opts, :sample_format, :missing),
+       fn value -> value == :missing or value in [:s16, :s24, :s32, :f32] end,
+       "sample_format must be :s16, :s24, :s32, or :f32"}
+    ]
+
+    case Enum.find(checks, fn {value, valid, _message} ->
+           not valid.(value)
+         end) do
+      nil -> :ok
+      {_value, _valid, message} -> {:error, rustle(:invalid_settings, message)}
+    end
+  end
+
+  defp conversion_input(%RustyOpus.PCM{} = pcm, opts) do
+    if Keyword.has_key?(opts, :from),
+      do: {:error, rustle(:invalid_settings, ":from is not allowed for PCM input")},
+      else: {:ok, :pcm, pcm}
+  end
+
+  defp conversion_input(input, opts) when is_binary(input) do
+    with {:ok, source} <- detect_format(input, Keyword.get(opts, :from, :auto)),
+         {:ok, pcm} <- decode_source(source, input) do
+      {:ok, source, pcm}
+    end
+  end
+
+  defp conversion_input(_, _),
+    do: {:error, rustle(:invalid_input, "conversion input must be a binary or PCM struct")}
+
+  defp detect_format(_input, from) when from not in [:auto, :ogg_opus, :mp3, :wav],
+    do: {:error, rustle(:invalid_settings, ":from must be :auto, :ogg_opus, :mp3, or :wav")}
+
+  defp detect_format(input, :wav) do
+    if wav_signature?(input),
+      do: {:ok, :wav},
+      else: {:error, rustle(:format_mismatch, "input is not a supported RIFF/WAVE file")}
+  end
+
+  defp detect_format(input, :ogg_opus) do
+    if ogg_opus_signature?(input),
+      do: {:ok, :ogg_opus},
+      else: {:error, rustle(:format_mismatch, "input is not an Ogg Opus family-0 file")}
+  end
+
+  defp detect_format(input, :mp3) do
+    if mp3_signature?(input),
+      do: {:ok, :mp3},
+      else: {:error, rustle(:format_mismatch, "input is not an MP3 file")}
+  end
+
+  defp detect_format(input, :auto) do
+    cond do
+      wav_signature?(input) ->
+        {:ok, :wav}
+
+      ogg_opus_signature?(input) ->
+        {:ok, :ogg_opus}
+
+      mp3_signature?(input) ->
+        {:ok, :mp3}
+
+      true ->
+        {:error,
+         rustle(:unsupported_format, "input format is not a supported WAV, MP3, or Ogg Opus blob")}
+    end
+  end
+
+  defp wav_signature?(input) when byte_size(input) < 12, do: false
+
+  defp wav_signature?(<<"RIFF", riff_size::little-unsigned-32, "WAVE", _rest::binary>> = input) do
+    end_pos = 8 + riff_size
+    end_pos <= byte_size(input) and end_pos >= 12 and wav_chunks?(input, 12, end_pos, false)
+  end
+
+  defp wav_signature?(_), do: false
+
+  defp wav_chunks?(_input, pos, end_pos, fmt?) when pos == end_pos, do: fmt?
+  defp wav_chunks?(_input, pos, end_pos, _fmt?) when pos + 8 > end_pos, do: false
+
+  defp wav_chunks?(input, pos, end_pos, fmt?) do
+    <<id::binary-size(4), size::little-unsigned-32>> = binary_part(input, pos, 8)
+    content = pos + 8
+    padded = size + rem(size, 2)
+
+    if content + padded > end_pos do
+      false
+    else
+      next_fmt? = fmt? or id == "fmt "
+      wav_chunks?(input, content + padded, end_pos, next_fmt?)
+    end
+  end
+
+  defp ogg_opus_signature?(input) when byte_size(input) < 27, do: false
+
+  defp ogg_opus_signature?(
+         <<"OggS", 0, _flags, _granule::little-unsigned-64, _serial::little-unsigned-32,
+           _sequence::little-unsigned-32, _crc::little-unsigned-32, count, _rest::binary>> = input
+       ) do
+    if byte_size(input) >= 27 + count do
+      segments = binary_part(input, 27, count)
+      body_size = segments |> :binary.bin_to_list() |> Enum.sum()
+      body_start = 27 + count
+
+      if body_start + body_size <= byte_size(input) do
+        body = binary_part(input, body_start, body_size)
+
+        byte_size(body) >= 19 and binary_part(body, 0, 8) == "OpusHead" and
+          binary_part(body, 9, 1) in [<<1>>, <<2>>] and binary_part(body, 18, 1) == <<0>>
+      else
+        false
+      end
+    else
+      false
+    end
+  end
+
+  defp ogg_opus_signature?(_), do: false
+
+  defp mp3_signature?(<<"ID3", rest::binary>>) do
+    with true <- byte_size(rest) >= 7,
+         <<version, _revision, flags, size_bytes::binary-size(4), _payload::binary>> <- rest,
+         true <- version in [2, 3, 4],
+         true <- Enum.all?(:binary.bin_to_list(size_bytes), &(&1 < 128)),
+         tag_size <- synchsafe_size(size_bytes),
+         footer <- if((flags &&& 0x10) != 0, do: 10, else: 0),
+         start <- 10 + tag_size + footer,
+         full <- <<"ID3", rest::binary>>,
+         true <- start <= byte_size(full) do
+      valid_mp3_frames?(binary_part(full, start, byte_size(full) - start))
+    else
+      _ -> false
+    end
+  end
+
+  defp mp3_signature?(input) when is_binary(input), do: valid_mp3_frames?(input)
+  defp mp3_signature?(_), do: false
+
+  defp synchsafe_size(<<a, b, c, d>>), do: (a <<< 21) + (b <<< 14) + (c <<< 7) + d
+
+  defp valid_mp3_frames?(input) do
+    case find_mp3_frame(input, 0, min(byte_size(input), 4096)) do
+      nil ->
+        false
+
+      {first_pos, header} ->
+        first_size = mp3_frame_size(header)
+        second_pos = first_pos + first_size
+
+        second_pos + 4 <= byte_size(input) and
+          consistent_mp3_header?(header, binary_part(input, second_pos, 4))
+    end
+  end
+
+  defp find_mp3_frame(_input, offset, limit) when offset >= limit, do: nil
+
+  defp find_mp3_frame(input, offset, limit) do
+    if offset + 4 <= byte_size(input) do
+      candidate = binary_part(input, offset, 4)
+
+      case parse_mp3_header(candidate) do
+        {:ok, header} -> {offset, header}
+        :error -> find_mp3_frame(input, offset + 1, limit)
+      end
+    else
+      nil
+    end
+  end
+
+  defp parse_mp3_header(<<0xFF, second, third, fourth>>) do
+    version = second >>> 3 &&& 0x03
+    layer = second >>> 1 &&& 0x03
+    bitrate_index = third >>> 4 &&& 0x0F
+    sample_index = third >>> 2 &&& 0x03
+    channel_mode = fourth >>> 6 &&& 0x03
+    channels = if channel_mode == 3, do: 1, else: 2
+
+    if (second &&& 0xE0) == 0xE0 and version != 1 and layer == 1 and
+         bitrate_index not in [0, 15] and sample_index != 3 do
+      base_rates = [44_100, 48_000, 32_000]
+      rate = Enum.at(base_rates, sample_index)
+      rate = if version == 3, do: rate, else: div(rate, 2)
+      rate = if version == 0, do: div(rate, 2), else: rate
+
+      table =
+        if version == 3,
+          do: [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320],
+          else: [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160]
+
+      {:ok, {version, Enum.at(table, bitrate_index), rate, channels, fourth >>> 1 &&& 0x01}}
+    else
+      :error
+    end
+  end
+
+  defp parse_mp3_header(_), do: :error
+
+  defp consistent_mp3_header?({version, _bitrate, rate, channels, _extension}, bytes) do
+    case parse_mp3_header(bytes) do
+      {:ok, {^version, _other_bitrate, ^rate, ^channels, _other_extension}} -> true
+      _ -> false
+    end
+  end
+
+  defp mp3_frame_size({version, bitrate, rate, _channels, _extension}) do
+    coefficient = if version == 3, do: 144, else: 72
+    trunc(coefficient * bitrate * 1000 / rate) + 0
+  end
+
+  defp decode_source(:wav, input), do: RustyOpus.WAV.decode(input)
+  defp decode_source(:mp3, input), do: RustyOpus.MP3.decode(input)
+  defp decode_source(:ogg_opus, input), do: RustyOpus.OggOpus.decode(input)
+
+  defp convert_pipeline(_source, pcm, :pcm, opts),
+    do: RustyOpus.PCM.transform(pcm, Keyword.take(opts, [:sample_rate, :channels]))
+
+  defp convert_pipeline(source, pcm, target, opts) when source == target do
+    case target do
+      :wav ->
+        RustyOpus.WAV.encode(pcm, Keyword.take(opts, [:sample_format, :sample_rate, :channels]))
+
+      :mp3 ->
+        RustyOpus.MP3.encode(
+          pcm,
+          Keyword.take(opts, [:bitrate, :bitrate_mode, :sample_rate, :channels])
+        )
+
+      :ogg_opus ->
+        RustyOpus.OggOpus.encode(pcm, Keyword.take(opts, [:bitrate, :bitrate_mode, :channels]))
+    end
+  end
+
+  defp convert_pipeline(_source, pcm, target, opts) do
+    with {:ok, pcm} <- RustyOpus.PCM.transform(pcm, Keyword.take(opts, [:sample_rate, :channels])),
+         {:ok, output} <- encode_target(target, pcm, opts) do
+      {:ok, output}
+    end
+  end
+
+  defp encode_target(:wav, pcm, opts),
+    do: RustyOpus.WAV.encode(pcm, Keyword.take(opts, [:sample_format]))
+
+  defp encode_target(:mp3, pcm, opts),
+    do: RustyOpus.MP3.encode(pcm, Keyword.take(opts, [:bitrate, :bitrate_mode]))
+
+  defp encode_target(:ogg_opus, pcm, opts),
+    do: RustyOpus.OggOpus.encode(pcm, Keyword.take(opts, [:bitrate, :bitrate_mode]))
+
   @reasons %{
     "native" => :native,
     "closed" => :closed,
@@ -343,6 +689,11 @@ defmodule RustyOpus do
     "invalid_rate" => :invalid_rate,
     "encode_failed" => :encode_failed,
     "decode_failed" => :decode_failed,
+    "allocation_bound" => :allocation_bound,
+    "format_mismatch" => :format_mismatch,
+    "unsupported_format" => :unsupported_format,
+    "transform_failed" => :transform_failed,
+    "contained_panic" => :contained_panic,
     "codec_panicked" => :codec_panicked
   }
 

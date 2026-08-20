@@ -19,10 +19,16 @@ mod atoms {
 
 mod decoder;
 mod encoder;
+#[allow(clippy::all, clippy::pedantic, clippy::nursery)]
+mod mp3;
+#[allow(clippy::all, clippy::pedantic, clippy::nursery)]
 mod ogg;
+#[allow(clippy::all, clippy::pedantic, clippy::nursery)]
+mod wav;
 
 use decoder::DecoderResource;
 use encoder::{EncoderResource, NativeSettings};
+use mp3::Mp3Settings;
 use ogg::ReencodeSettings;
 
 #[rustler::nif]
@@ -138,6 +144,98 @@ fn decoder_close(resource: rustler::ResourceArc<DecoderResource>) -> Result<(), 
 #[rustler::nif]
 fn decoder_count() -> usize {
     decoder::decoder_count()
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+fn wav_decode<'a>(
+    env: rustler::Env<'a>,
+    blob: rustler::Binary<'a>,
+) -> Result<(i64, usize, rustler::Binary<'a>), (String, String)> {
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        wav::decode(blob.as_slice())
+    }));
+    match result {
+        Ok(Ok((rate, channels, pcm))) => {
+            let mut binary = rustler::NewBinary::new(env, pcm.len());
+            binary.as_mut_slice().copy_from_slice(&pcm);
+            Ok((i64::from(rate), channels, binary.into()))
+        }
+        Ok(Err(error)) => Err(error),
+        Err(_) => Err((
+            "codec_panicked".to_string(),
+            "native WAV panic contained".to_string(),
+        )),
+    }
+}
+
+#[allow(clippy::all, clippy::pedantic, clippy::nursery)]
+#[rustler::nif(schedule = "DirtyCpu")]
+fn wav_encode<'a>(
+    env: rustler::Env<'a>,
+    pcm: rustler::Binary<'a>,
+    rate: i64,
+    channels: usize,
+    sample_format: String,
+) -> Result<rustler::Binary<'a>, (String, String)> {
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let rate = u32::try_from(rate).map_err(|_| {
+            (
+                "invalid_rate".to_string(),
+                "sample rate is out of range".to_string(),
+            )
+        })?;
+        wav::encode(pcm.as_slice(), rate, channels, &sample_format)
+    }));
+    match result {
+        Ok(Ok(bytes)) => {
+            let mut binary = rustler::NewBinary::new(env, bytes.len());
+            binary.as_mut_slice().copy_from_slice(&bytes);
+            Ok(binary.into())
+        }
+        Ok(Err(error)) => Err(error),
+        Err(_) => Err((
+            "codec_panicked".to_string(),
+            "native WAV panic contained".to_string(),
+        )),
+    }
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+fn mp3_decode<'a>(
+    env: rustler::Env<'a>,
+    blob: rustler::Binary<'a>,
+) -> Result<(i64, usize, rustler::Binary<'a>), (String, String)> {
+    mp3::decode(env, blob)
+}
+
+#[allow(clippy::all, clippy::pedantic, clippy::nursery)]
+#[rustler::nif(schedule = "DirtyCpu")]
+fn mp3_encode<'a>(
+    env: rustler::Env<'a>,
+    pcm: rustler::Binary<'a>,
+    rate: i64,
+    channels: usize,
+    settings: Mp3Settings,
+) -> Result<rustler::Binary<'a>, (String, String)> {
+    mp3::encode(env, pcm, rate, channels, settings)
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+fn ogg_decode<'a>(
+    env: rustler::Env<'a>,
+    blob: rustler::Binary<'a>,
+) -> Result<(i64, usize, rustler::Binary<'a>), (String, String)> {
+    ogg::ogg_decode(env, blob)
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+fn ogg_encode<'a>(
+    env: rustler::Env<'a>,
+    pcm: rustler::Binary<'a>,
+    channels: usize,
+    settings: ReencodeSettings,
+) -> Result<rustler::Binary<'a>, (String, String)> {
+    ogg::ogg_encode(env, pcm, channels, settings)
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

@@ -51,5 +51,11 @@ defmodule RustyOpus.Native do
   def decoder_close(_resource), do: :erlang.nif_error(:nif_not_loaded)
   def decoder_count, do: :erlang.nif_error(:nif_not_loaded)
 
+  def wav_decode(_blob), do: :erlang.nif_error(:nif_not_loaded)
+  def wav_encode(_pcm, _rate, _channels, _sample_format), do: :erlang.nif_error(:nif_not_loaded)
+  def mp3_decode(_blob), do: :erlang.nif_error(:nif_not_loaded)
+  def mp3_encode(_pcm, _rate, _channels, _settings), do: :erlang.nif_error(:nif_not_loaded)
+  def ogg_decode(_blob), do: :erlang.nif_error(:nif_not_loaded)
+  def ogg_encode(_pcm, _channels, _settings), do: :erlang.nif_error(:nif_not_loaded)
   def ogg_reencode(_blob, _settings), do: :erlang.nif_error(:nif_not_loaded)
 end

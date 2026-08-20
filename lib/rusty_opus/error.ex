@@ -8,5 +8,22 @@ defmodule RustyOpus.Error do
 
   defexception [:message, :reason]
 
-  @type t :: %__MODULE__{message: String.t(), reason: atom() | String.t()}
+  @type reason ::
+          :native
+          | :closed
+          | :poisoned
+          | :invalid_pcm
+          | :invalid_input
+          | :invalid_settings
+          | :invalid_application
+          | :invalid_rate
+          | :encode_failed
+          | :decode_failed
+          | :allocation_bound
+          | :format_mismatch
+          | :unsupported_format
+          | :codec_panicked
+          | atom()
+
+  @type t :: %__MODULE__{message: String.t(), reason: reason()}
 end
