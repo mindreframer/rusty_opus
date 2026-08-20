@@ -3,6 +3,10 @@ Copyright 2026 RustyOpus contributors
 
 This product includes code from the following third-party projects:
 
+- `rusty_mp3`, a pure-Rust MPEG Layer III encoder and decoder, version 0.7.0,
+  Copyright (c) Mata Network and contributors, licensed under Apache-2.0. Used
+  for in-memory MP3 decode and encode.
+
 - `opus-rs`, a pure-Rust implementation of the Opus audio codec (RFC 6716),
   Copyright (c) restsend and contributors, licensed under the BSD-3-Clause
   license. Pinned revision: 0.1.29 (see docs/provenance.md). Used for packet

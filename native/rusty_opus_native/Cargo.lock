@@ -95,11 +95,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
 
 [[package]]
+name = "rusty_mp3"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3fd89ed8a368cceb87ffcc9f3f128fff535ff1cd3ad27e4e64406c29d307a956"
+
+[[package]]
 name = "rusty_opus_native"
-version = "0.3.3"
+version = "0.4.0"
 dependencies = [
  "opus-rs",
  "rustler",
+ "rusty_mp3",
 ]
 
 [[package]]

@@ -4,6 +4,16 @@ RustyOpus vendors no third-party source code; it depends on published crates fro
 crates.io and published Hex packages. This page records the exact upstream revisions
 and licenses so a build is reproducible and the third-party surface is auditable.
 
+## Codec: rusty_mp3
+
+- **Crate:** `rusty_mp3`
+- **Version:** `0.7.0` (pinned exactly with `=0.7.0` in `Cargo.toml` and `Cargo.lock`)
+- **Repository:** <https://github.com/Remade-With-Rust/remade_ffmpeg_rs>
+- **License:** Apache-2.0 (see `NOTICE`)
+- **Features:** default features disabled; the crate has no runtime dependencies.
+- **Scope:** MPEG-1/2/2.5 Layer III mono/stereo in-memory decode and CBR/VBR encode.
+  The wrapper validates standard bitrates before calling the backend.
+
 ## Codec: opus-rs
 
 - **Crate:** `opus-rs`

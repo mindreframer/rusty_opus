@@ -1,7 +1,7 @@
 defmodule RustyOpus.MixProject do
   use Mix.Project
 
-  @version "0.3.3"
+  @version "0.4.0"
   @source_url "https://github.com/mindreframer/rusty_opus"
 
   def project do
@@ -12,7 +12,8 @@ defmodule RustyOpus.MixProject do
       start_permanent: Mix.env() == :prod,
       elixirc_paths: elixirc_paths(Mix.env()),
       deps: deps(),
-      description: "Pure-Rust Opus codec for Elixir via Rustler",
+      description:
+        "Pure-Rust in-process WAV, MP3, and Ogg Opus conversion for Elixir via Rustler",
       source_ref: "v#{@version}",
       source_url: @source_url,
       docs: docs(),
@@ -45,6 +46,7 @@ defmodule RustyOpus.MixProject do
         "docs/installation.md",
         "docs/codec.md",
         "docs/quality.md",
+        "docs/qualification.md",
         "docs/provenance.md",
         "docs/troubleshooting.md",
         "SECURITY.md",
@@ -53,7 +55,7 @@ defmodule RustyOpus.MixProject do
       groups_for_extras: [
         Codec: ~r/docs\/(codec|quality)\.md/,
         Operations: ~r/docs\/(installation|troubleshooting)\.md/,
-        "Project information": ~r/(provenance\.md|SECURITY\.md|CHANGELOG\.md)/
+        "Project information": ~r/(provenance|qualification)\.md|SECURITY\.md|CHANGELOG\.md/
       ]
     ]
   end
@@ -67,6 +69,7 @@ defmodule RustyOpus.MixProject do
       files:
         ~w(lib native/rusty_opus_native/src native/rusty_opus_native/Cargo.toml
            native/rusty_opus_native/Cargo.lock native/rusty_opus_native/build.rs
+           test/fixtures/manifest.json
            native/rusty_opus_native/rust-toolchain.toml docs LICENSE NOTICE
            CHANGELOG.md SECURITY.md README.md mix.exs .formatter.exs) ++
           Path.wildcard("checksum-*.exs")

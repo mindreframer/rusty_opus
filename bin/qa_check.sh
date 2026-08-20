@@ -25,6 +25,10 @@ mix compile --warnings-as-errors
 stage "Elixir tests"
 mix test
 
+stage "Fixture qualification report"
+test -f docs/qualification.md
+grep -q 'rusty_mp3.*0.7.0' docs/qualification.md
+
 stage "Rust format"
 cargo +1.89.0 fmt --manifest-path native/rusty_opus_native/Cargo.toml --
 
@@ -37,6 +41,7 @@ cargo +1.89.0 test --locked --manifest-path native/rusty_opus_native/Cargo.toml
 
 stage "Source, path, and provenance audits"
 scripts/audit_source.sh
+scripts/audit_fixtures.sh
 
 if [ -f scripts/package_check.sh ]; then
   stage "Documentation and package contents"

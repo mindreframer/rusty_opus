@@ -17,11 +17,12 @@
 
 - RustyOpus exposes the pure-Rust `opus-rs` codec through a Rustler NIF. It must not shell out to ffmpeg, launch a Port, or spawn a process for codec work in the library path. ffmpeg appears only in fixture-import tooling, never in runtime or test code under test.
 - RustyOpus wraps the raw Opus CODEC (RFC 6716) for packet/PCM work and, for
-  `RustyOpus.reencode/2` only, demuxes/remuxes **Ogg Opus family 0** with thin
-  in-crate glue on top of the same `opus-rs` codec (ADR003). It must not shell
-  out to ffmpeg, launch a Port, or spawn a process for codec or container work.
-  Other containers (WebM/MP4) stay out of scope. ffmpeg appears only in fixture-import
-  tooling, never in runtime or test code under test.
+  file-like operations, handles only **Ogg Opus family 0**, MPEG Layer III, and
+  uncompressed RIFF/WAVE through thin pure-Rust in-process adapters. Ogg uses the
+  pinned `opus-rs` codec (ADR003); MP3 uses the pinned `rusty_mp3` crate (ADR004).
+  It must not shell out to ffmpeg, launch a Port, or spawn a process for codec or
+  container work. Other containers/codecs stay out of scope. ffmpeg appears only in
+  fixture-import tooling, never in runtime or test code under test.
 - For packet/PCM APIs it must not parse Ogg; callers that already hold raw packets use
   `encode`/`decode`/`transcode`. File-like Ogg blobs use `reencode/2`.
 - Codec state (encoder/decoder) lives in Rustler resources owned by Elixir processes. Resource cleanup on owner death and explicit close must be idempotent and leak-free.
@@ -35,7 +36,7 @@
 - Prefer direct, readable, maintainable code. Avoid speculative frameworks and abstractions without a second implementation.
 - Minimize dependencies. Each dependency adds build, security, upgrade, and release cost.
 - Keep the Elixir API independent of any consuming application.
-- Keep the pinned `opus-rs` revision, its BSD-3-Clause license, and the vendored/third-party license inventory auditable.
+- Keep the pinned `opus-rs` and `rusty_mp3` revisions, their licenses, and the vendored/third-party license inventory auditable.
 - Keep roadmap commits focused. Do not mix unrelated cleanup into an epic.
 
 ## Tests
