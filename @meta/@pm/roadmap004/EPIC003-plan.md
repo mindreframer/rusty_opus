@@ -2,13 +2,13 @@
 
 ## Progress
 
-- [ ] Phase 3.1: Implement checked in-memory RIFF/WAVE parsing, legal chunk traversal/padding, and deferred-format rejection.
-- [ ] Phase 3.2: Decode supported 8/16/24/32-bit integer and f32 mono/stereo WAV to `%RustyOpus.PCM{}`.
-- [ ] Phase 3.3: Encode PCM to finalized deterministic `:s16`, `:s24`, `:s32`, and `:f32` WAV binaries.
-- [ ] Phase 3.4: Add `RustyOpus.WAV.decode/1`, `encode/2`, and `reencode/2` with stable validation/errors/transforms.
-- [ ] Phase 3.5: Add unit/integration coverage for formats, transforms, chunks, empty/truncated/overflow input, and options.
-- [ ] Phase 3.6: Pass independent WAV conformance, quantization, fuzz, memory, scheduler, determinism, and lifecycle checks.
-- [ ] Phase 3.7: Run complete WAV suites and `bin/qa_check.sh`, verify Epic 3, and prepare the focused commit.
+- [x] Phase 3.1: Implement checked in-memory RIFF/WAVE parsing, legal chunk traversal/padding, and deferred-format rejection.
+- [x] Phase 3.2: Decode supported 8/16/24/32-bit integer and f32 mono/stereo WAV to `%RustyOpus.PCM{}`.
+- [x] Phase 3.3: Encode PCM to finalized deterministic `:s16`, `:s24`, `:s32`, and `:f32` WAV binaries.
+- [x] Phase 3.4: Add `RustyOpus.WAV.decode/1`, `encode/2`, and `reencode/2` with stable validation/errors/transforms.
+- [x] Phase 3.5: Add unit/integration coverage for formats, transforms, chunks, empty/truncated/overflow input, and options.
+- [x] Phase 3.6: Pass independent WAV conformance, quantization, fuzz, memory, scheduler, determinism, and lifecycle checks.
+- [x] Phase 3.7: Run complete WAV suites and `bin/qa_check.sh`, verify Epic 3, and prepare the focused commit.
 
 ## Implementation Steps
 
@@ -32,13 +32,13 @@
 
 ## Test Isolation Checklist
 
-- [ ] Tests use binary fixtures or unique temporary directories only for developer tooling.
-- [ ] Runtime/QA tests never call ffmpeg, a system reader, or a filesystem codec path.
-- [ ] Each fuzz case is bounded and unrecoverable cases stay in disposable child BEAMs.
-- [ ] Exact and quantized comparisons use the matching sample-depth tolerance.
-- [ ] Scheduler checks use barriers/heartbeats rather than arbitrary sleeps.
-- [ ] Repeated calls compare counters to a captured baseline.
-- [ ] Independent reference outputs have manifest hashes/provenance.
+- [x] Tests use binary fixtures or unique temporary directories only for developer tooling.
+- [x] Runtime/QA tests never call ffmpeg, a system reader, or a filesystem codec path.
+- [x] Each fuzz case is bounded and unrecoverable cases stay in disposable child BEAMs.
+- [x] Exact and quantized comparisons use the matching sample-depth tolerance.
+- [x] Scheduler checks use barriers/heartbeats rather than arbitrary sleeps.
+- [x] Repeated calls compare counters to a captured baseline.
+- [x] Independent reference outputs have manifest hashes/provenance.
 
 ## Extra Quality Evidence
 
@@ -50,13 +50,13 @@
 
 ## Quality Gate
 
-- [ ] Supported WAV inputs decode with correct metadata and sample behavior.
-- [ ] All four output sample formats are canonical and independently consumable.
-- [ ] Exact/quantized thresholds and rate/channel/duration invariants pass.
-- [ ] Unsupported/malformed/oversized variants return stable errors without panic.
-- [ ] No metadata-preservation, path, streaming, extra-codec, or unrelated DSP scope leaked in.
-- [ ] `bin/qa_check.sh` is green after extra-quality evidence passes.
-- [ ] Commit title/body follow the roadmap004 rule.
+- [x] Supported WAV inputs decode with correct metadata and sample behavior.
+- [x] All four output sample formats are canonical and independently consumable.
+- [x] Exact/quantized thresholds and rate/channel/duration invariants pass.
+- [x] Unsupported/malformed/oversized variants return stable errors without panic.
+- [x] No metadata-preservation, path, streaming, extra-codec, or unrelated DSP scope leaked in.
+- [x] `bin/qa_check.sh` is green after extra-quality evidence passes.
+- [x] Commit title/body follow the roadmap004 rule.
 
 ## Commit Rule
 

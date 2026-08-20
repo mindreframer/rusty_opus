@@ -2,13 +2,13 @@
 
 ## Progress
 
-- [ ] Phase 6.1: Implement conservative byte-based WAV/Ogg Opus/MP3 detection plus explicit `:from` mismatch handling.
-- [ ] Phase 6.2: Implement exact common option ownership/applicability validation for every `:to` target.
-- [ ] Phase 6.3: Add `%RustyOpus.PCM{}` input and `to: :pcm` endpoints while rejecting ambiguous raw PCM binaries.
-- [ ] Phase 6.4: Compose one decode, optional shared transform, and one encode for all file pairs and same-format routes.
-- [ ] Phase 6.5: Stabilize stage-aware errors, checked limits, dirty scheduling, counters, and facade robustness.
-- [ ] Phase 6.6: Pass the complete 3×3+PCM conformance, fidelity, duration, detection, error, memory, concurrency, and forbidden-activity matrix.
-- [ ] Phase 6.7: Run complete facade/compatibility suites and `bin/qa_check.sh`, verify Epic 6, and prepare the focused commit.
+- [x] Phase 6.1: Implement conservative byte-based WAV/Ogg Opus/MP3 detection plus explicit `:from` mismatch handling.
+- [x] Phase 6.2: Implement exact common option ownership/applicability validation for every `:to` target.
+- [x] Phase 6.3: Add `%RustyOpus.PCM{}` input and `to: :pcm` endpoints while rejecting ambiguous raw PCM binaries.
+- [x] Phase 6.4: Compose one decode, optional shared transform, and one encode for all file pairs and same-format routes.
+- [x] Phase 6.5: Stabilize stage-aware errors, checked limits, dirty scheduling, counters, and facade robustness.
+- [x] Phase 6.6: Pass the complete 3×3+PCM conformance, fidelity, duration, detection, error, memory, concurrency, and forbidden-activity matrix.
+- [x] Phase 6.7: Run complete facade/compatibility suites and `bin/qa_check.sh`, verify Epic 6, and prepare the focused commit.
 
 ## Implementation Steps
 
@@ -31,13 +31,13 @@
 
 ## Test Isolation Checklist
 
-- [ ] Matrix cases use immutable committed fixtures and unique conversion state.
-- [ ] Each expected output is validated independently of only self-decoding.
-- [ ] Concurrency cases use unique inputs/options and explicit barriers.
-- [ ] Lifecycle/scheduler assertions use captured baselines and heartbeats, not sleeps.
-- [ ] Fatal/corrupt fuzz cases stay bounded in disposable child BEAMs.
-- [ ] No runtime/default test creates a codec temp file or invokes an external executable.
-- [ ] Existing dedicated/raw API regression suites run unchanged in intent.
+- [x] Matrix cases use immutable committed fixtures and unique conversion state.
+- [x] Each expected output is validated independently of only self-decoding.
+- [x] Concurrency cases use unique inputs/options and explicit barriers.
+- [x] Lifecycle/scheduler assertions use captured baselines and heartbeats, not sleeps.
+- [x] Fatal/corrupt fuzz cases stay bounded in disposable child BEAMs.
+- [x] No runtime/default test creates a codec temp file or invokes an external executable.
+- [x] Existing dedicated/raw API regression suites run unchanged in intent.
 
 ## Extra Quality Evidence
 
@@ -49,13 +49,13 @@
 
 ## Quality Gate
 
-- [ ] Common examples and all 3×3+PCM paths meet their contracts.
-- [ ] Detection is conservative, content-based, deterministic, and mismatch-aware.
-- [ ] Required/inapplicable/unknown/conflicting option validation is exact.
-- [ ] Dedicated-only settings remain absent from `convert/2`.
-- [ ] Memory/concurrency/scheduler/lifecycle and forbidden-activity checks pass.
-- [ ] `bin/qa_check.sh` is green after extra-quality evidence passes.
-- [ ] Commit title/body follow the roadmap004 rule.
+- [x] Common examples and all 3×3+PCM paths meet their contracts.
+- [x] Detection is conservative, content-based, deterministic, and mismatch-aware.
+- [x] Required/inapplicable/unknown/conflicting option validation is exact.
+- [x] Dedicated-only settings remain absent from `convert/2`.
+- [x] Memory/concurrency/scheduler/lifecycle and forbidden-activity checks pass.
+- [x] `bin/qa_check.sh` is green after extra-quality evidence passes.
+- [x] Commit title/body follow the roadmap004 rule.
 
 ## Commit Rule
 

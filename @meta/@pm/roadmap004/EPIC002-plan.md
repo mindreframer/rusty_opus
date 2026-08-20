@@ -2,13 +2,13 @@
 
 ## Progress
 
-- [ ] Phase 2.1: Add the validated `%RustyOpus.PCM{data, sample_rate, channels}` struct without changing existing helpers.
-- [ ] Phase 2.2: Centralize f32le alignment, finite-value, frame-count, rate/channel, checked-size, and marshalling validation.
-- [ ] Phase 2.3: Implement deterministic mono/stereo preservation, duplication, and `(L + R) / 2` downmix.
-- [ ] Phase 2.4: Implement bounded fixed-ratio offline resampling with explicit tail flush and frame accounting.
-- [ ] Phase 2.5: Compose validated internal rate/channel transforms behind the common option contract.
-- [ ] Phase 2.6: Pass signal-integrity, duration, alias, determinism, memory, scheduler, and lifecycle quality measurements.
-- [ ] Phase 2.7: Run complete PCM/transform tests and `bin/qa_check.sh`, verify Epic 2, and prepare the focused commit.
+- [x] Phase 2.1: Add the validated `%RustyOpus.PCM{data, sample_rate, channels}` struct without changing existing helpers.
+- [x] Phase 2.2: Centralize f32le alignment, finite-value, frame-count, rate/channel, checked-size, and marshalling validation.
+- [x] Phase 2.3: Implement deterministic mono/stereo preservation, duplication, and `(L + R) / 2` downmix.
+- [x] Phase 2.4: Implement bounded fixed-ratio offline resampling with explicit tail flush and frame accounting.
+- [x] Phase 2.5: Compose validated internal rate/channel transforms behind the common option contract.
+- [x] Phase 2.6: Pass signal-integrity, duration, alias, determinism, memory, scheduler, and lifecycle quality measurements.
+- [x] Phase 2.7: Run complete PCM/transform tests and `bin/qa_check.sh`, verify Epic 2, and prepare the focused commit.
 
 ## Implementation Steps
 
@@ -30,13 +30,13 @@
 
 ## Test Isolation Checklist
 
-- [ ] Each transform test owns its PCM values and native work; no shared mutable resampler.
-- [ ] Signal inputs, target rates, and thresholds are deterministic and versioned.
-- [ ] Lossy/resampled comparisons use delay-aware helpers rather than exact equality.
-- [ ] Lifecycle tests capture native counters before work and use barriers, not sleeps.
-- [ ] Scheduler tests use bounded workloads and generous deterministic timing bounds.
-- [ ] Output-size tests validate checked failure before impractical allocation.
-- [ ] Existing raw Opus fixtures/tests remain unchanged in intent.
+- [x] Each transform test owns its PCM values and native work; no shared mutable resampler.
+- [x] Signal inputs, target rates, and thresholds are deterministic and versioned.
+- [x] Lossy/resampled comparisons use delay-aware helpers rather than exact equality.
+- [x] Lifecycle tests capture native counters before work and use barriers, not sleeps.
+- [x] Scheduler tests use bounded workloads and generous deterministic timing bounds.
+- [x] Output-size tests validate checked failure before impractical allocation.
+- [x] Existing raw Opus fixtures/tests remain unchanged in intent.
 
 ## Extra Quality Evidence
 
@@ -48,13 +48,13 @@
 
 ## Quality Gate
 
-- [ ] PCM struct and validation contract match ROADMAP004 and Epic 1.
-- [ ] Existing binary helpers and raw Opus APIs remain compatible.
-- [ ] Channel transforms are exact for defined fixtures and preserve interleaving.
-- [ ] Resampling passes all frozen signal/duration thresholds and keeps the tail.
-- [ ] Hostile sizes/non-finite values return stable errors without panic/allocation blowup.
-- [ ] `bin/qa_check.sh` is green after extra-quality measurements pass.
-- [ ] Commit title/body follow the roadmap004 rule.
+- [x] PCM struct and validation contract match ROADMAP004 and Epic 1.
+- [x] Existing binary helpers and raw Opus APIs remain compatible.
+- [x] Channel transforms are exact for defined fixtures and preserve interleaving.
+- [x] Resampling passes all frozen signal/duration thresholds and keeps the tail.
+- [x] Hostile sizes/non-finite values return stable errors without panic/allocation blowup.
+- [x] `bin/qa_check.sh` is green after extra-quality measurements pass.
+- [x] Commit title/body follow the roadmap004 rule.
 
 ## Commit Rule
 

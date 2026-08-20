@@ -2,13 +2,13 @@
 
 ## Progress
 
-- [ ] Phase 5.1: Add `RustyOpus.OggOpus` and delegate existing top-level re-encode without changing current behavior.
-- [ ] Phase 5.2: Decode family-0 mono/stereo Ogg Opus to 48 kHz PCM with correct pre-skip/end trim.
-- [ ] Phase 5.3: Encode validated/resampled PCM to valid family-0 headers, pages, lacing, CRCs, granules, and EOS.
-- [ ] Phase 5.4: Complete dedicated re-encode and preferred `:bitrate_mode` while retaining non-conflicting `:cbr` compatibility.
-- [ ] Phase 5.5: Prove every existing top-level/raw packet/resource/default/error/documented call remains compatible.
-- [ ] Phase 5.6: Pass independent RFC/page/granule/duration/bitrate/corruption/scheduler/lifecycle and compatibility quality checks.
-- [ ] Phase 5.7: Run complete Ogg/backward-compatibility suites and `bin/qa_check.sh`, verify Epic 5, and prepare the focused commit.
+- [x] Phase 5.1: Add `RustyOpus.OggOpus` and delegate existing top-level re-encode without changing current behavior.
+- [x] Phase 5.2: Decode family-0 mono/stereo Ogg Opus to 48 kHz PCM with correct pre-skip/end trim.
+- [x] Phase 5.3: Encode validated/resampled PCM to valid family-0 headers, pages, lacing, CRCs, granules, and EOS.
+- [x] Phase 5.4: Complete dedicated re-encode and preferred `:bitrate_mode` while retaining non-conflicting `:cbr` compatibility.
+- [x] Phase 5.5: Prove every existing top-level/raw packet/resource/default/error/documented call remains compatible.
+- [x] Phase 5.6: Pass independent RFC/page/granule/duration/bitrate/corruption/scheduler/lifecycle and compatibility quality checks.
+- [x] Phase 5.7: Run complete Ogg/backward-compatibility suites and `bin/qa_check.sh`, verify Epic 5, and prepare the focused commit.
 
 ## Implementation Steps
 
@@ -31,13 +31,13 @@
 
 ## Test Isolation Checklist
 
-- [ ] Ogg tests use unique complete blobs/stream serial state and no shared mutable codec.
-- [ ] Delay/duration assertions use explicit pre-skip/granule frame accounting.
-- [ ] Corrupt inputs are bounded and fatal cases stay in disposable child BEAMs.
-- [ ] Compatibility expectations are captured before refactoring and asserted afterward.
-- [ ] Lifecycle/scheduler tests use counters, barriers, and heartbeats rather than sleeps.
-- [ ] Runtime/default tests use no external process, path, or system codec.
-- [ ] Metadata tests expect minimal output, never preservation.
+- [x] Ogg tests use unique complete blobs/stream serial state and no shared mutable codec.
+- [x] Delay/duration assertions use explicit pre-skip/granule frame accounting.
+- [x] Corrupt inputs are bounded and fatal cases stay in disposable child BEAMs.
+- [x] Compatibility expectations are captured before refactoring and asserted afterward.
+- [x] Lifecycle/scheduler tests use counters, barriers, and heartbeats rather than sleeps.
+- [x] Runtime/default tests use no external process, path, or system codec.
+- [x] Metadata tests expect minimal output, never preservation.
 
 ## Extra Quality Evidence
 
@@ -49,13 +49,13 @@
 
 ## Quality Gate
 
-- [ ] Dedicated Ogg module fulfills all three verbs over family-0 blobs.
-- [ ] Emitted headers/pages/granules/CRCs and duration pass independent checks.
-- [ ] `RustyOpus.reencode/2` and raw packet/resource APIs remain compatible.
-- [ ] `:bitrate_mode`/`:cbr` conflict and all Opus settings are explicit/stable.
-- [ ] Unsupported/corrupt inputs fail safely and bounded scheduler/lifecycle checks pass.
-- [ ] `bin/qa_check.sh` is green after extra-quality evidence passes.
-- [ ] Commit title/body follow the roadmap004 rule.
+- [x] Dedicated Ogg module fulfills all three verbs over family-0 blobs.
+- [x] Emitted headers/pages/granules/CRCs and duration pass independent checks.
+- [x] `RustyOpus.reencode/2` and raw packet/resource APIs remain compatible.
+- [x] `:bitrate_mode`/`:cbr` conflict and all Opus settings are explicit/stable.
+- [x] Unsupported/corrupt inputs fail safely and bounded scheduler/lifecycle checks pass.
+- [x] `bin/qa_check.sh` is green after extra-quality evidence passes.
+- [x] Commit title/body follow the roadmap004 rule.
 
 ## Commit Rule
 

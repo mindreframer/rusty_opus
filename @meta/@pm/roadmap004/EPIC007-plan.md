@@ -2,13 +2,13 @@
 
 ## Progress
 
-- [ ] Phase 7.1: Harden all formats/facade with bounded fuzz, mixed concurrency, panic, limits, scheduler, lifecycle, and counter tests.
-- [ ] Phase 7.2: Synchronize README, moduledocs, guides, examples, terminology, option tables, compatibility, and limitations.
-- [ ] Phase 7.3: Synchronize exact pins/locks, NOTICE/licenses/provenance/security, source audits, and advisory checks.
-- [ ] Phase 7.4: Verify unpacked package plus clean source and no-Rust consumers across common/dedicated/legacy APIs.
-- [ ] Phase 7.5: Update CI/precompiled format smoke, validate the target matrix, and synchronize version/changelog/docs to `0.4.0`.
-- [ ] Phase 7.6: Pass clean release conformance including artifacts, published-binary checksums, consumers, compatibility, size, CI, and monitored targets.
-- [ ] Phase 7.7: Run final `bin/qa_check.sh`, verify all roadmap criteria, mark ROADMAP004 Complete, and prepare the focused readiness commit.
+- [x] Phase 7.1: Harden all formats/facade with bounded fuzz, mixed concurrency, panic, limits, scheduler, lifecycle, and counter tests.
+- [x] Phase 7.2: Synchronize README, moduledocs, guides, examples, terminology, option tables, compatibility, and limitations.
+- [x] Phase 7.3: Synchronize exact pins/locks, NOTICE/licenses/provenance/security, source audits, and advisory checks.
+- [x] Phase 7.4: Verify unpacked package plus clean source and no-Rust consumers across common/dedicated/legacy APIs.
+- [x] Phase 7.5: Update CI/precompiled format smoke, validate the target matrix, and synchronize version/changelog/docs to `0.4.0`.
+- [x] Phase 7.6: Pass clean release conformance including artifacts, published-binary checksums, consumers, compatibility, size, CI, and monitored targets.
+- [x] Phase 7.7: Run final `bin/qa_check.sh`, verify all roadmap criteria, mark ROADMAP004 Complete, and prepare the focused readiness commit.
 
 ## Implementation Steps
 
@@ -36,13 +36,13 @@
 
 ## Test Isolation Checklist
 
-- [ ] Fuzz inputs/seeds/bounds are deterministic; fatal cases use disposable child BEAMs.
-- [ ] Mixed workloads own unique state and coordinate with barriers, not sleeps.
-- [ ] Clean consumers use unique temporary projects and explicitly excluded caches/toolchains.
-- [ ] Artifact smoke extracts and loads the exact archive, never the build-tree library.
-- [ ] Checksums derive only from published assets and exact expected filenames.
-- [ ] Docs/examples/package/advisory checks need no credentials or mutable external service.
-- [ ] Existing `.cursor/` and unrelated user changes remain untouched.
+- [x] Fuzz inputs/seeds/bounds are deterministic; fatal cases use disposable child BEAMs.
+- [x] Mixed workloads own unique state and coordinate with barriers, not sleeps.
+- [x] Clean consumers use unique temporary projects and explicitly excluded caches/toolchains.
+- [x] Artifact smoke extracts and loads the exact archive, never the build-tree library.
+- [x] Checksums derive only from published assets and exact expected filenames.
+- [x] Docs/examples/package/advisory checks need no credentials or mutable external service.
+- [x] Existing `.cursor/` and unrelated user changes remain untouched.
 
 ## Extra Quality Evidence
 
@@ -56,13 +56,13 @@
 
 ## Quality Gate
 
-- [ ] Hostile/concurrent/repeated/lifecycle/scheduler checks pass without leak/crash/wedge.
-- [ ] Docs, examples, terminology, limitations, and compatibility match actual behavior.
-- [ ] License/provenance/security/advisory/source and package audits are green.
-- [ ] Clean source and every applicable no-Rust consumer pass all format smokes.
-- [ ] `0.4.0`, exact artifacts, published-binary checksums, target smokes, and CI all verify.
-- [ ] Final `bin/qa_check.sh` is green from a clean checkout and ROADMAP004 criteria pass.
-- [ ] Commit follows the roadmap004 rule; final manual publish remains with maintainer.
+- [x] Hostile/concurrent/repeated/lifecycle/scheduler checks pass without leak/crash/wedge.
+- [x] Docs, examples, terminology, limitations, and compatibility match actual behavior.
+- [x] License/provenance/security/advisory/source and package audits are green.
+- [x] Clean source and every applicable no-Rust consumer pass all format smokes.
+- [x] `0.4.0`, exact artifacts, published-binary checksums, target smokes, and CI all verify.
+- [x] Final `bin/qa_check.sh` is green from a clean checkout and ROADMAP004 criteria pass.
+- [x] Commit follows the roadmap004 rule; final manual publish remains with maintainer.
 
 ## Commit Rule
 

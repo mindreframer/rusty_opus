@@ -2,13 +2,13 @@
 
 ## Progress
 
-- [ ] Phase 4.1: Implement in-memory MPEG-1/2/2.5 Layer III decode with bounded ID3/sync handling and PCM metadata.
-- [ ] Phase 4.2: Implement validated mono/stereo MP3 encode with numeric bits/s bitrate, CBR/VBR, drain, delay, and reservoir completion.
-- [ ] Phase 4.3: Add `RustyOpus.MP3.decode/1`, `encode/2`, and `reencode/2` with only qualified dedicated options.
-- [ ] Phase 4.4: Compose optional rate/channel transforms and complete metadata-dropping MP3 re-encoding.
-- [ ] Phase 4.5: Harden layer/rate/bitrate/tag/frame/reservoir/truncation/garbage/allocation error boundaries.
-- [ ] Phase 4.6: Pass the frozen MP3 interoperability, fidelity, bitrate, duration, fuzz, target, memory, scheduler, and lifecycle gate.
-- [ ] Phase 4.7: Run complete MP3 suites and `bin/qa_check.sh`, verify Epic 4, and prepare the focused commit.
+- [x] Phase 4.1: Implement in-memory MPEG-1/2/2.5 Layer III decode with bounded ID3/sync handling and PCM metadata.
+- [x] Phase 4.2: Implement validated mono/stereo MP3 encode with numeric bits/s bitrate, CBR/VBR, drain, delay, and reservoir completion.
+- [x] Phase 4.3: Add `RustyOpus.MP3.decode/1`, `encode/2`, and `reencode/2` with only qualified dedicated options.
+- [x] Phase 4.4: Compose optional rate/channel transforms and complete metadata-dropping MP3 re-encoding.
+- [x] Phase 4.5: Harden layer/rate/bitrate/tag/frame/reservoir/truncation/garbage/allocation error boundaries.
+- [x] Phase 4.6: Pass the frozen MP3 interoperability, fidelity, bitrate, duration, fuzz, target, memory, scheduler, and lifecycle gate.
+- [x] Phase 4.7: Run complete MP3 suites and `bin/qa_check.sh`, verify Epic 4, and prepare the focused commit.
 
 ## Implementation Steps
 
@@ -34,14 +34,14 @@
 
 ## Test Isolation Checklist
 
-- [ ] Every encode/decode/reencode case owns its complete codec state and binaries.
-- [ ] Quality comparisons use identical source/alignment/metric/settings manifests.
-- [ ] Independent results come from committed artifacts or developer conformance tooling,
+- [x] Every encode/decode/reencode case owns its complete codec state and binaries.
+- [x] Quality comparisons use identical source/alignment/metric/settings manifests.
+- [x] Independent results come from committed artifacts or developer conformance tooling,
       never an external executable invoked by runtime/default tests.
-- [ ] Corrupt/fuzz cases are bounded and fatal paths stay in disposable child BEAMs.
-- [ ] Scheduler tests use heartbeats/barriers; lifecycle tests capture counter baselines.
-- [ ] No test depends on ID3 metadata being preserved.
-- [ ] Target builds use locked dependencies and clean build directories.
+- [x] Corrupt/fuzz cases are bounded and fatal paths stay in disposable child BEAMs.
+- [x] Scheduler tests use heartbeats/barriers; lifecycle tests capture counter baselines.
+- [x] No test depends on ID3 metadata being preserved.
+- [x] Target builds use locked dependencies and clean build directories.
 
 ## Extra Quality Evidence
 
@@ -53,13 +53,13 @@
 
 ## Quality Gate
 
-- [ ] Decode metadata/reference alignment passes for every qualified fixture.
-- [ ] CBR/VBR output is independently consumable and structurally valid.
-- [ ] Frozen quality, bitrate, size, and duration thresholds pass without waiver.
-- [ ] Invalid standard bitrates error before backend snapping can occur.
-- [ ] Pure-Rust/no-process/no-file/no-FFI and target/provenance audits pass.
-- [ ] `bin/qa_check.sh` is green after extra-quality evidence passes.
-- [ ] Commit title/body follow the roadmap004 rule.
+- [x] Decode metadata/reference alignment passes for every qualified fixture.
+- [x] CBR/VBR output is independently consumable and structurally valid.
+- [x] Frozen quality, bitrate, size, and duration thresholds pass without waiver.
+- [x] Invalid standard bitrates error before backend snapping can occur.
+- [x] Pure-Rust/no-process/no-file/no-FFI and target/provenance audits pass.
+- [x] `bin/qa_check.sh` is green after extra-quality evidence passes.
+- [x] Commit title/body follow the roadmap004 rule.
 
 ## Commit Rule
 

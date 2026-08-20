@@ -1,6 +1,6 @@
 # ROADMAP004 — Cohesive Ogg Opus, MP3, and WAV Blob Conversion
 
-**Status:** In progress
+**Status:** Complete
 
 - **Scope:** Add pure-Rust, in-process MP3 and WAV handling; organize Ogg Opus file
   operations in a dedicated module; and add one small common conversion API.
